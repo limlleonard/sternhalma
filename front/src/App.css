@@ -1,0 +1,108 @@
+#root {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 2rem;
+	text-align: center;
+	color:black;
+    font-family: sans-serif;
+	font-size: 1.2em;
+
+    /* border: 2px solid red; */
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    --diameterField: 30px;
+    --diameterPiece: 30px;
+}
+
+/* body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #444;
+} */
+
+.ctn0 {
+    display: flex;
+    background-color: #666;
+    text-align: center;
+
+    width: 100%;
+    gap: 30px;
+    padding: 30px;
+    max-width: 1050px;
+}
+.side-bar {
+    width: 280px;
+    height: 720px;
+    background-color: #888;
+    padding: 1em;
+}
+.side-bar>*{
+    margin-bottom: 0.6em;
+}
+.ctn-select select {
+    font-size: 1em;
+    width: 3em;
+    text-align: center;
+}
+#ctn-btn {
+    display: flex;
+    gap: 0.5em;
+}
+#ctn-btn button {
+    flex: 1;
+    padding: 0.3em 0.5em;
+    font-size: 1em;
+}
+#ctn-timer, #ctn-counter, .ctn-select {
+    text-align: left;
+}
+p {
+    display: inline;
+}
+#board {
+    position: relative;
+    width: 720px;
+    height: 720px;
+    background-color: #888;
+}
+
+.circle {
+    position: absolute;
+    width: var(--diameterField);
+    height: var(--diameterField);
+    border-radius: 50%;
+    background-color: lightgray;
+    border-color: black;
+}
+.valid {
+    background-color: gray;
+    cursor: pointer;
+    z-index: 1;
+}
+.piece {
+    background-color: red;
+    cursor: pointer;
+    z-index: 2;
+}
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2); /* Expand */
+    }
+    100% {
+        transform: scale(1); /* Shrink back */
+    }
+}
+.piece.selected {
+    animation: pulse 1s infinite; /* Animate in a 1-second rhythm */
+    z-index: 3;
+}
+.piece.blue { background-color: blue; }
+.piece.green { background-color: green; }
