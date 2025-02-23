@@ -64,6 +64,13 @@
 p {
     display: inline;
 }
+.circleSmall {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    vertical-align: middle; /* Aligns with the text */
+}
 #board {
     position: relative;
     width: 720px;
@@ -85,10 +92,12 @@ p {
     z-index: 1;
 }
 .piece {
-    background-color: red;
     cursor: pointer;
     z-index: 2;
 }
+.farbe0 { background-color: red; }
+.farbe1 { background-color: yellow; }
+.farbe2 { background-color: green; }
 @keyframes pulse {
     0% {
         transform: scale(1);

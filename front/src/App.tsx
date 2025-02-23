@@ -33,13 +33,13 @@ export const Circle: React.FC<Omit<BaseProps, 'className' | 'colorInd'>> = (prop
 	<Base {...props} className="circle" colorInd={0} />
 );
 export const Piece: React.FC<Omit<BaseProps, 'className'>> = (props) => (
-	<Base {...props} className="circle piece" colorInd={1} />
+	<Base {...props} className={`circle piece farbe${props.colorInd}`} />
 );
 export const Valid: React.FC<Omit<BaseProps, 'className' | 'colorInd'>> = (props) => (
 	<Base {...props} className="circle valid" colorInd={-1} />
 );
 export const Selected: React.FC<Omit<BaseProps, 'className'>> = (props) => (
-	<Base {...props} className="circle piece selected" colorInd={1} />
+	<Base {...props} className={`circle piece selected farbe${props.colorInd}`} />
 );
 
 function App() {
@@ -51,8 +51,9 @@ function App() {
 	const [timerInterval, setTimerInterval] = useState<number | null>(null);
 	const [selected, setSelected] = useState<[number, number] | null>(null);
 	const [arrCircle, setArrCircle] = useState<[number,number][]>([]);
-	const [arrPiece, setArrPiece] = useState<[number,number][]>([]);
+	const [aaFigur, setAAFigur] = useState<[number,number][][]>([]); // array of array of figur
 	const [arrValid, setArrValid] = useState<[number,number][]>([]);
+	const [order, setOrder] = useState<number>(0);
 
 	const [nrPlayer, setNrPlayer] = useState<number>(1);
 
@@ -64,13 +65,26 @@ function App() {
 		return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 	};
 
-	const startTimer = () => {
+	const startTimer = async () => {
 		if (timerInterval) return;
 		const interval = setInterval(() => {
 			setSeconds((prev) => prev + 1);
 		}, 1000);
 		setTimerInterval(interval);
-		initPieces1();
+		
+		try {
+			const response = await fetch(`${url0}return_pieces/`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ nrPlayer }),
+			});
+			const llPiece: [number, number][][] = await response.json();
+			setAAFigur(llPiece);
+		} catch (err) {
+			console.error("Error fetching pieces:", err);
+		}
 	};
 
 	const stopTimer = () => {
@@ -89,7 +103,7 @@ function App() {
 			} else {
 				initBoard1();
 				setSelected(null);
-				setArrPiece([]);
+				setAAFigur([]);
 				setArrValid([]);
 			}
 		} catch (err) {
@@ -115,20 +129,6 @@ function App() {
 		}
 	};
 
-	const initPieces1 = async () => {
-		try {
-			const response = await fetch(`${url0}return_pieces/`);
-			const lstPiece: [number, number][] = await response.json();
-			setArrPiece(lstPiece);
-			// lstPiece.map(([x, y]:[number, number]) => {
-			// 	const xr=Math.round(x);
-			// 	const yr=Math.round(y);
-			// });
-			// lstPiece.forEach(([x, y]) => createCircle(x, y, 1));
-		} catch (err) {
-			console.error("Error fetching pieces:", err);
-		}
-	};
 	const test1 = () => {
 	}
 	const klicken1 = async (coords: { x: number; y: number; colorInd: number }) => {
@@ -149,10 +149,12 @@ function App() {
 				setSelected([coords.x, coords.y]);
 			}
 			setArrValid(result.validPos);
-			if (result.coordTo) {
-				setArrPiece((prev) => prev.filter(([x, y]) => x !== result.coordFrom[0] || y !== result.coordFrom[1]));
-				setArrPiece((prev) => [...prev, result.coordTo]);
+			if (result.neueFiguren) {
+				// setAAFigur((prev) => prev.filter(([x, y]) => x !== result.coordFrom[0] || y !== result.coordFrom[1]));
+				// setAAFigur((prev) => [...prev, result.coordTo]);
+				setAAFigur(result.neueFiguren)
 				setNrMoves((prev) => prev+1);
+				setOrder(result.order)
 				if (result.gewonnen) {
 					alert('Gewonnen!!!');
 				}
@@ -204,19 +206,24 @@ function App() {
 					<p>Number of moves: </p>
 					<p id="nrMoves">{nrMoves}</p>
 				</div>
+				<div id="ctn-order">
+					<p>Player in turn: <span className={`circleSmall farbe${order}`}></span> </p>
+				</div>
 				<button onClick={test1}>Test1</button>
 			</section>
 			<div className="board" id="board" ref={boardRef}>
 				{arrCircle.map(([x, y]) => (
 					<Circle key={`${x}-${y}`} x={x} y={y} onKlicken={klicken1}/>
 				))}
-				{arrPiece.map(([x, y]) => (
-					<Piece key={`${x}-${y}`} x={x} y={y} colorInd={1} onKlicken={klicken1} />
+				{aaFigur.map((arrFigur, nrSpieler) => (
+					arrFigur.map(([x, y]) => (
+						<Piece key={`${x}-${y}`} x={x} y={y} colorInd={nrSpieler} onKlicken={klicken1} />
+					))	
 				))}
 				{arrValid.map(([x, y]) => (
 					<Valid key={`${x}-${y}`} x={x} y={y} onKlicken={klicken1} />
 				))}
-				{selected ? (<Selected x={selected[0]} y={selected[1]} colorInd={1} onKlicken={klicken1} /> ) : null}
+				{selected ? (<Selected x={selected[0]} y={selected[1]} colorInd={order} onKlicken={klicken1} /> ) : null}
 			</div>
 		</div>
 		</>
