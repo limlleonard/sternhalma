@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-
 import './App.css'
 
 const diameterPiece = 30;
+const url0='http://127.0.0.1:8000/';
 interface BaseProps {
 	x: number;
 	y: number;
-	colorInd: number;
-	className: string;
-	onKlicken: (coords: { x: number; y: number; colorInd: number }) => void;
+	colorInd?: number;
+	className?: string;
+	onKlicken: (coords: { x: number; y: number }) => void;
 }
-const Base: React.FC<BaseProps> = ({ x, y, colorInd, className, onKlicken }) => {
+const Base: React.FC<BaseProps> = ({ x, y, className, onKlicken }) => {
 	const klicken = () => {
-		onKlicken({ x, y, colorInd });
+		onKlicken({ x, y });
 	};
 
 	return (
@@ -29,22 +29,21 @@ const Base: React.FC<BaseProps> = ({ x, y, colorInd, className, onKlicken }) => 
 	></div>
 	);
 };
-export const Circle: React.FC<Omit<BaseProps, 'className' | 'colorInd'>> = (props) => (
-	<Base {...props} className="circle" colorInd={0} />
+export const Circle: React.FC<BaseProps> = (props) => (
+	<Base {...props} className="circle" />
 );
-export const Piece: React.FC<Omit<BaseProps, 'className'>> = (props) => (
-	<Base {...props} className={`circle piece farbe${props.colorInd}`} />
+export const Piece: React.FC<BaseProps> = (props) => (
+	<Base {...props} className={`circle piece farbe${props.colorInd} `} />
 );
-export const Valid: React.FC<Omit<BaseProps, 'className' | 'colorInd'>> = (props) => (
-	<Base {...props} className="circle valid" colorInd={-1} />
+export const Valid: React.FC<BaseProps> = (props) => (
+	<Base {...props} className="circle valid" />
 );
-export const Selected: React.FC<Omit<BaseProps, 'className'>> = (props) => (
+export const Selected: React.FC<BaseProps> = (props) => (
 	<Base {...props} className={`circle piece selected farbe${props.colorInd}`} />
 );
 
 function App() {
 	// const [count, setCount] = useState(0)
-	const boardRef = useRef<HTMLDivElement>(null);
 	const timerRef = useRef<HTMLDivElement>(null);
 	const [nrMoves, setNrMoves] = useState(0);
 	const [seconds, setSeconds] = useState(0);
@@ -54,10 +53,7 @@ function App() {
 	const [aaFigur, setAAFigur] = useState<[number,number][][]>([]); // array of array of figur
 	const [arrValid, setArrValid] = useState<[number,number][]>([]);
 	const [order, setOrder] = useState<number>(0);
-
 	const [nrPlayer, setNrPlayer] = useState<number>(1);
-
-	const url0='http://127.0.0.1:8000/';
 
 	const formatTime = (seconds: number) => {
 		const minutes = Math.floor(seconds / 60);
@@ -65,7 +61,7 @@ function App() {
 		return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 	};
 
-	const startTimer = async () => {
+	const starten = async () => {
 		if (timerInterval) return;
 		const interval = setInterval(() => {
 			setSeconds((prev) => prev + 1);
@@ -75,9 +71,7 @@ function App() {
 		try {
 			const response = await fetch(`${url0}return_pieces/`, {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
+				headers: {"Content-Type": "application/json",},
 				body: JSON.stringify({ nrPlayer }),
 			});
 			const llPiece: [number, number][][] = await response.json();
@@ -87,15 +81,16 @@ function App() {
 		}
 	};
 
-	const stopTimer = () => {
+	const stoppen = () => {
 		if (timerInterval) clearInterval(timerInterval);
 		setTimerInterval(null);
 	};
 
-	const resetTimer = async () => {
-		stopTimer();
+	const reset = async () => {
+		stoppen();
 		setSeconds(0);
 		setNrMoves(0);
+		setOrder(0);
 		try {
 			const response = await fetch(`${url0}reset/`);
 			if (!response.ok) {
@@ -131,7 +126,7 @@ function App() {
 
 	const test1 = () => {
 	}
-	const klicken1 = async (coords: { x: number; y: number; colorInd: number }) => {
+	const klicken1 = async (coords: { x: number; y: number }) => {
 		const xr=coords.x;
 		const yr=coords.y;
 		try {
@@ -143,21 +138,16 @@ function App() {
 				body: JSON.stringify({ xr, yr }),
 			});
 			const result = await response.json();
-			console.log(result);
 			setSelected(null);
 			if (result.selected) {
 				setSelected([coords.x, coords.y]);
 			}
 			setArrValid(result.validPos);
 			if (result.neueFiguren) {
-				// setAAFigur((prev) => prev.filter(([x, y]) => x !== result.coordFrom[0] || y !== result.coordFrom[1]));
-				// setAAFigur((prev) => [...prev, result.coordTo]);
 				setAAFigur(result.neueFiguren)
 				setNrMoves((prev) => prev+1);
 				setOrder(result.order)
-				if (result.gewonnen) {
-					alert('Gewonnen!!!');
-				}
+				if (result.gewonnen) alert('Gewonnen!!!');
 			}
 		} catch (err) {
 			console.error("Error during klicken:", err);
@@ -171,11 +161,11 @@ function App() {
 		// return () => stopTimer();
 	}, []);
 
-	useEffect(() => {
-		if (timerRef.current) {
-			timerRef.current.textContent = formatTime(seconds);
-		}
-	}, [seconds]);
+	// useEffect(() => {
+		// if (timerRef.current) {
+		// 	timerRef.current.textContent = formatTime(seconds);
+		// }
+	// }, [seconds]);
 
 	return (
 		<>
@@ -188,37 +178,26 @@ function App() {
 						<option value="1">1</option>
 						<option value="2">2</option>
 						<option value="3">3</option>
-						<option value="4">4</option>
-						<option value="5">5</option>
-						<option value="6">6</option>
 					</select>
 				</div>
 				<div id="ctn-btn">
-					<button onClick={startTimer}>Start</button>
-					<button onClick={stopTimer}>Stop</button>
-					<button onClick={resetTimer}>Reset</button>
+					<button onClick={starten}>Start</button>
+					<button onClick={stoppen}>Stop</button>
+					<button onClick={reset}>Reset</button>
 				</div>
-				<div id="ctn-timer">
-					<p  title="Timer will start when you make the first move.">Timer: </p>
-					<p id="timer" ref={timerRef}>0:00</p><br/>
-				</div>
-				<div id="ctn-counter">
-					<p>Number of moves: </p>
-					<p id="nrMoves">{nrMoves}</p>
-				</div>
-				<div id="ctn-order">
-					<p>Player in turn: <span className={`circleSmall farbe${order}`}></span> </p>
-				</div>
+				<p>Timer: <span id="timer" ref={timerRef}>{formatTime(seconds)}</span></p>
+				<p>Number of moves: <span id="nrMoves">{nrMoves}</span></p>
+				<p>Player in turn: <span className={`circleSmall farbe${order}`}></span></p>
 				<button onClick={test1}>Test1</button>
 			</section>
-			<div className="board" id="board" ref={boardRef}>
+			<div className="board" id="board" >
 				{arrCircle.map(([x, y]) => (
 					<Circle key={`${x}-${y}`} x={x} y={y} onKlicken={klicken1}/>
 				))}
 				{aaFigur.map((arrFigur, nrSpieler) => (
 					arrFigur.map(([x, y]) => (
 						<Piece key={`${x}-${y}`} x={x} y={y} colorInd={nrSpieler} onKlicken={klicken1} />
-					))	
+					))
 				))}
 				{arrValid.map(([x, y]) => (
 					<Valid key={`${x}-${y}`} x={x} y={y} onKlicken={klicken1} />
@@ -232,7 +211,7 @@ function App() {
 
 export default App
 
-// farben auswählen
+// farben auswählen, feld farbe
 // Dynamic Refs Storage: useRef<{ [key: string]: CircleRef | null }> creates an object to hold references to all Circle components.
 // Assigning Refs: The ref prop is set using an inline function to dynamically store each Circle component by its key (x-y).
 // Accessing Specific Circle: The handleSetValid function takes coordinates and calls setValid(true) on the correct circle.

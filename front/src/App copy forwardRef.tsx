@@ -42,7 +42,7 @@ function App() {
 	// const [count, setCount] = useState(0)
 	const boardRef = useRef<HTMLDivElement>(null);
 	const timerRef = useRef<HTMLDivElement>(null);
-    const circleRef = useRef<Record<string, HTMLDivElement | null>>({});
+    // const circleRef = useRef<Record<string, HTMLDivElement | null>>({});
 	const circleRefs = useRef<{ [key: string]: CircleRef | null }>({});
 
 	const [nrMoves, setNrMoves] = useState(0);

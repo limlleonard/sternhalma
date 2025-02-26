@@ -7,6 +7,21 @@ diameterPiece=24
 DISTCC=40 # center-center distance
 Middle_Layer=4 # layer of circles outside of the center circle, it builds up a hexagon. Beyond this layer will be 6 corners
 
+def rotate_point(pc, p1, nr_angle):
+    cx, cy = pc
+    x1, y1 = p1
+    angle_rad = 2*pi*nr_angle/6
+    # Translate point to origin
+    translated_x = x1 - cx
+    translated_y = y1 - cy
+    # Rotate point
+    x2 = translated_x * cos(angle_rad) - translated_y * sin(angle_rad)
+    y2 = translated_x * sin(angle_rad) + translated_y * cos(angle_rad)
+    # Translate point back
+    x2 += cx
+    y2 += cy
+    return (x2, y2)
+
 class Board():
     def __init__(self):
         """(nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
@@ -39,7 +54,7 @@ class Board():
                         y3=y1+(y2-y1)*nr_circle_layer/nr_circles_layer
                         dct_board[(nr_layer, direction, nr_circle_layer)]=(x3, y3)
         return dct_board
-
+    
 class Spieler():
     def __init__(self, init_dir=1):
         self.lst_piece=self.init_group(init_dir)
@@ -78,6 +93,9 @@ class Spieler():
         if sorted_lst_piece==sorted_lst_ziel:
             self.gewonnen=True
 
+    def rotate(self, lst_piece):
+        return [(2*CENTERX-x, 2*CENTERY-y) for (x,y) in lst_piece]
+
 class Spiel():
     def __init__(self, nr_spieler=2):
         self.board=Board()
@@ -85,6 +103,7 @@ class Spiel():
         self.order=0
         self.dct_dir={1: [1], 2: [1,4], 3: [1,3,5], 4:[1,4,2,5], 5:[1,3,5,2,4], 6:[1,3,5,2,4,6]}
         self.reset(nr_spieler)
+        # self.spieler_rotate=[]
     
     def reset(self, nr_spieler=2):
         self.spieler=[]
@@ -169,4 +188,14 @@ class Spiel():
             neue_figuren=self.get_ll_piece() # wenn neue_figuren nicht None, bedeutet ein Bewegung wird gemacht
         return spieler.selected, spieler.valid_pos, neue_figuren, self.order, spieler.gewonnen
 
+    def get_rotate_spieler(self, nr_angle):
+        """Rotate all the player and return them"""
+        spieler_rotate=[]
+        for spieler_alt in self.spieler:
+            spieler_neu=spieler_alt.copy()
+            spieler_neu.lst_piece=[rotate_point((CENTERX, CENTERY), p1, nr_angle) for p1 in spieler_neu.lst_piece]
+            spieler_neu.lst_piece_round=[(round(coord[0]), round(coord[1])) for coord in spieler_neu.lst_piece]
+            spieler_neu.lst_target=[rotate_point((CENTERX, CENTERY), p1, nr_angle) for p1 in spieler_neu.lst_target]
+            spieler_neu.lst_target_round=[(round(coord[0]), round(coord[1])) for coord in spieler_neu.lst_target]
+        return spieler_rotate
 # todos: reset, win check, add player, turn board, swap turns
