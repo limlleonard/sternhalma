@@ -56,7 +56,7 @@ MIDDLEWARE = [
     # 'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-ROOT_URLCONF = 'sternhalma_dj.urls'
+ROOT_URLCONF = 'back.urls'
 
 TEMPLATES = [
     {
@@ -74,7 +74,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'sternhalma_dj.wsgi.application'
+WSGI_APPLICATION = 'back.wsgi.application'
 
 
 # Database
