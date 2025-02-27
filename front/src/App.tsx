@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import './App.css'
 import {Circle, Piece, Valid, Selected} from "./circles"
 // const url0='http://127.0.0.1:8000/';
-const url0=`${window.location.origin}:80`
+const url0=`${window.location.origin}:80/`
 
 interface ModelScore {
     id: number;
