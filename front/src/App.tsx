@@ -256,3 +256,7 @@ export default App
 // Accessing Specific Circle: The handleSetValid function takes coordinates and calls setValid(true) on the correct circle.
 
 // score list, one should not be able to click on the circles unless the game is started
+// 1 server - 1 room / player. let the other wait.
+// 1 server - multi rooms, create a instance for each room and direct the gamer to the room, python-socketio
+// save those instance to a dict and ...
+// ogs

@@ -1,0 +1,7 @@
+'SECRET_KEY': top-secret
+'ENGINE': 'django.db.backends.postgresql'
+'NAME': 'bjv43dmw65b7obui857u'
+'USER': 'uwss14x03ljxhvrjdqvo'
+'PASSWORD': 'sMoKyW9kA8TuyUCOEWDsI1YnzEgImQ'
+'HOST': 'bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com'
+'PORT': '50013'
