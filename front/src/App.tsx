@@ -1,47 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import './App.css'
-
-const diameterPiece = 30;
+import {Circle, Piece, Valid, Selected} from "./circles"
 const url0='http://127.0.0.1:8000/';
-interface BaseProps {
-	x: number;
-	y: number;
-	colorInd?: number;
-	className?: string;
-	onKlicken: (coords: { x: number; y: number }) => void;
+
+interface ModelScore {
+    id: number;
+    score: number | string;
+    name: string;
 }
-const Base: React.FC<BaseProps> = ({ x, y, className, onKlicken }) => {
-	const klicken = () => {
-		onKlicken({ x, y });
-	};
-
-	return (
-	<div
-		className={className}
-		onClick={klicken}
-		style={{
-		position: 'absolute',
-		width: `${diameterPiece}px`,
-		height: `${diameterPiece}px`,
-		left: `${x - diameterPiece / 2}px`,
-		top: `${y - diameterPiece / 2}px`,
-		}}
-	></div>
-	);
-};
-export const Circle: React.FC<BaseProps> = (props) => (
-	<Base {...props} className="circle" />
-);
-export const Piece: React.FC<BaseProps> = (props) => (
-	<Base {...props} className={`circle piece farbe${props.colorInd} `} />
-);
-export const Valid: React.FC<BaseProps> = (props) => (
-	<Base {...props} className="circle valid" />
-);
-export const Selected: React.FC<BaseProps> = (props) => (
-	<Base {...props} className={`circle piece selected farbe${props.colorInd}`} />
-);
-
 function App() {
 	// const [count, setCount] = useState(0)
 	const timerRef = useRef<HTMLDivElement>(null);
@@ -54,6 +20,8 @@ function App() {
 	const [arrValid, setArrValid] = useState<[number,number][]>([]);
 	const [order, setOrder] = useState<number>(0);
 	const [nrPlayer, setNrPlayer] = useState<number>(1);
+    const [bestList, setBestList] = useState<ModelScore[]>([]);
+	const [aktiv, setAktiv] = useState(false);
 
 	const formatTime = (seconds: number) => {
 		const minutes = Math.floor(seconds / 60);
@@ -67,43 +35,33 @@ function App() {
 			setSeconds((prev) => prev + 1);
 		}, 1000);
 		setTimerInterval(interval);
-		
 		try {
-			const response = await fetch(`${url0}return_pieces/`, {
+			const response = await fetch(`${url0}starten/`, {
 				method: "POST",
 				headers: {"Content-Type": "application/json",},
 				body: JSON.stringify({ nrPlayer }),
 			});
 			const llPiece: [number, number][][] = await response.json();
 			setAAFigur(llPiece);
+			setAktiv(true)
 		} catch (err) {
 			console.error("Error fetching pieces:", err);
 		}
 	};
 
-	const stoppen = () => {
+	const reset = async () => {
 		if (timerInterval) clearInterval(timerInterval);
 		setTimerInterval(null);
-	};
-
-	const reset = async () => {
-		stoppen();
 		setSeconds(0);
 		setNrMoves(0);
 		setOrder(0);
-		try {
-			const response = await fetch(`${url0}reset/`);
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			} else {
-				initBoard1();
-				setSelected(null);
-				setAAFigur([]);
-				setArrValid([]);
-			}
-		} catch (err) {
-			console.error("Error by resetting:", err);
-		}
+
+		initBoard1();
+		setSelected(null);
+		setAAFigur([]);
+		setArrValid([]);
+		setAktiv(false)
+		// Wenn man auf reset klickt, das Spiel läuft immer noch im Backend, aber der Frontend ist deaktiviert
 	};
 
 	const initBoard1 = async () => {
@@ -124,9 +82,65 @@ function App() {
 		}
 	};
 
-	const test1 = () => {
+    const fetchScores = () => {
+        fetch(`${url0}api/score/`)
+            .then((response) => response.json())
+            .then((apiData: ModelScore[]) => {
+                const filledData = [
+                    ...apiData,
+                    ...Array.from({ length: Math.max(0, 5 - apiData.length) }, () => ({
+                        id: Math.random(),
+                        score: '---',
+                        name: '----------',
+                    })),
+                ];
+                setBestList(filledData);
+            })
+            .catch((error) => console.error('Error fetching data:', error));
+    };
+
+    const handleNewScore = (newScore: number) => {
+        // Find the highest score in the array
+        const scores = bestList
+            .map((item) => (typeof item.score === 'number' ? item.score : -Infinity))
+            .filter((score) => score !== -Infinity);
+        const highestScore = scores.length > 0 ? Math.max(...scores) : -Infinity;
+
+        if (newScore < highestScore || scores.length<5 ) {
+            const name = prompt('Congratulations! Would you like to leave your name on the ranking:')?.trim();
+            if (name && name.length <= 20) {
+                fetch(`${url0}api/add_score/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ score: newScore, name }),
+                })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error('Failed to add score');
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        alert('Score added successfully!');
+                        fetchScores(); // Refresh the scores
+                    })
+                    .catch((error) => {
+                        console.error('Error adding score:', error);
+                        alert('Error adding score. Please try again.');
+                    });
+            }
+        }
+    };
+
+	const test1 = async () => {
+		// const score = parseInt(prompt('Enter a new score:') || '', 10);
+		// if (!isNaN(score)) {
+		// 	handleNewScore(score);
+		// }
+		alert('Du bist aber neugierig...')
 	}
 	const klicken1 = async (coords: { x: number; y: number }) => {
+		if (!aktiv) return 
 		const xr=coords.x;
 		const yr=coords.y;
 		try {
@@ -147,7 +161,10 @@ function App() {
 				setAAFigur(result.neueFiguren)
 				setNrMoves((prev) => prev+1);
 				setOrder(result.order)
-				if (result.gewonnen) alert('Gewonnen!!!');
+				if (result.gewonnen) {
+					handleNewScore(nrMoves)
+					setAktiv(false)
+				};
 			}
 		} catch (err) {
 			console.error("Error during klicken:", err);
@@ -158,7 +175,7 @@ function App() {
 	}
 	useEffect(() => {
 		initBoard1();
-		// return () => stopTimer();
+		fetchScores();
 	}, []);
 
 	// useEffect(() => {
@@ -182,12 +199,34 @@ function App() {
 				</div>
 				<div id="ctn-btn">
 					<button onClick={starten}>Start</button>
-					<button onClick={stoppen}>Stop</button>
 					<button onClick={reset}>Reset</button>
 				</div>
 				<p>Timer: <span id="timer" ref={timerRef}>{formatTime(seconds)}</span></p>
 				<p>Number of moves: <span id="nrMoves">{nrMoves}</span></p>
 				<p>Player in turn: <span className={`circleSmall farbe${order}`}></span></p>
+				<p>High score list:</p>
+				<table>
+					<tbody>
+						{bestList.map((item) => (
+							<tr key={item.id}>
+								<td>{item.score}</td>
+								<td>{item.name}</td>
+							</tr>
+						))}
+					</tbody>
+					{/* <tr>
+						<td>100</td>
+						<td>Anna</td>
+					</tr>
+					<tr>
+						<td>120</td>
+						<td>Lena</td>
+					</tr>
+					<tr>
+						<td>---</td>
+						<td>----------</td>
+					</tr> */}
+				</table>
 				<button onClick={test1}>Test1</button>
 			</section>
 			<div className="board" id="board" >
@@ -215,3 +254,5 @@ export default App
 // Dynamic Refs Storage: useRef<{ [key: string]: CircleRef | null }> creates an object to hold references to all Circle components.
 // Assigning Refs: The ref prop is set using an inline function to dynamically store each Circle component by its key (x-y).
 // Accessing Specific Circle: The handleSetValid function takes coordinates and calls setValid(true) on the correct circle.
+
+// score list, one should not be able to click on the circles unless the game is started
