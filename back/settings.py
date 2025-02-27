@@ -118,11 +118,11 @@ STATICFILES_DIRS=[os.path.join(BASE_DIR, 'front/dist/assets')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = [
-    # "http://localhost:5173",
-    # "http://127.0.0.1:5173",
-    "*"
-]
-
+# CORS_ALLOWED_ORIGINS = [
+#     # "http://localhost:5173",
+#     # "http://127.0.0.1:5173",
+#     "*"
+# ]
+CORS_ALLOW_ALL_ORIGINS=True
 # Optional: If you need to allow credentials (e.g., cookies, authentication)
 CORS_ALLOW_CREDENTIALS = True
