@@ -106,15 +106,9 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
 # STATIC_URL='static/'
 STATIC_URL = 'assets/'
 STATICFILES_DIRS=[os.path.join(BASE_DIR, 'front/dist/assets')]
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -124,5 +118,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #     "*"
 # ]
 CORS_ALLOW_ALL_ORIGINS=True
-# Optional: If you need to allow credentials (e.g., cookies, authentication)
 CORS_ALLOW_CREDENTIALS = True
+
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache' # default: django.contrib.sessions.models.Session
+# SESSION_CACHE_ALIAS = 'default'
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         'LOCATION': 'unique-snowflake',
+#     }
+# }
+# SESSION_COOKIE_SECURE = False  # True for HTTPS only
+# SESSION_COOKIE_HTTPONLY = True
+# SESSION_SAVE_EVERY_REQUEST = True  # Save the session on every request
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = False

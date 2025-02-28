@@ -6,34 +6,37 @@ from rest_framework.response import Response # update database
 from rest_framework.decorators import action # update database
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import pickle
 from .spiel import Spiel
 from .models import Score
 from .serializers import SerializerScore
 
-# Initialize the board
-# centerx, centery, distcc = 10, 10, 5  # Replace with actual values
 spiel1 = Spiel()
-lst1 = [(1, 2), (50, 50), (20, 30)]  # Example positions
 
-def test_react(request):
+def react_build(request):
     return render(request, "index.html")
 
-def index(request):
-    return render(request, "game/index.html", {"lst_board": lst1})
-
 def return_board(request):
-    return JsonResponse(spiel1.board.lst_board, safe=False)
+    """return board is called first, so create spiel1 instance here"""
+    # if "spiel" not in request.session:
+    # spiel1 = Spiel()
+    # request.session["spiel"] = pickle.dumps(spiel1)
+    request.session['test1']='test1'
+    print(request.session.keys())
+    return JsonResponse(spiel1.board.lst_board_round, safe=False)
 
 @csrf_exempt
 def starten(request):
     # this should start game. Front should send nr_player here and reset game
+    print(request.session.keys())
     if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))
             nr_player = int(data.get("nrPlayer", 0))
+            # spiel1 = pickle.loads(request.session["spiel"])
             spiel1.reset(nr_player)
+            # request.session["spiel"] = pickle.dumps(spiel1)
             return JsonResponse(spiel1.get_ll_piece(), safe=False)
-
         except (json.JSONDecodeError, ValueError):
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
     return JsonResponse({"error": "Invalid request"}, status=400)
@@ -44,28 +47,21 @@ def klicken(request):
         try:
             data = json.loads(request.body.decode("utf-8"))  # Parse JSON
             coord_round = (int(data.get("xr", 0)), int(data.get("yr", 0)))
+            # spiel1 = pickle.loads(request.session["spiel"])
             selected, valid_pos, neue_figuren, order, gewonnen = spiel1.klicken(coord_round)
+            # request.session["spiel"] = pickle.dumps(spiel1)
 
             return JsonResponse({
                 "selected": selected,
                 "validPos": valid_pos,
                 "neueFiguren": neue_figuren,
-                # "coordFrom": coord_from,
-                # "coordTo": coord_to,
                 "order": order,
                 "gewonnen": gewonnen
-            })
+        })
         except (json.JSONDecodeError, ValueError):
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
-
-# def reset(request):
-#     spiel1.reset(3)
-#     return JsonResponse({})
-
-# def return_score(request):
-#     return JsonResponse({'scores':Score.objects.all()})
 
 class ViewsetScore(viewsets.ModelViewSet):
     queryset = Score.objects.all().order_by('score')[:5]
@@ -89,18 +85,3 @@ class ViewsetScore(viewsets.ModelViewSet):
             scores.last().delete()
 
         return Response({'success': 'Score added'}, status=status.HTTP_201_CREATED)
-
-# def home(request):
-#     context = {
-#         'posts': Score.objects.all()
-#     }
-#     return render(request, 'blog/home.html', context)
-
-# def klicken(request):
-#     if request.method == "POST":
-#         data = request.POST
-#         coord_round = (int(data.get("xr", 0)), int(data.get("yr", 0)))
-#         selected, valid_pos, coord_from, coord_to = board1.klicken(coord_round)
-#         print(data)
-#         return JsonResponse({"selected": selected, "validPos": valid_pos, "coordFrom": coord_from, "coordTo": coord_to})
-#     return JsonResponse({"error": "Invalid request"}, status=400)
