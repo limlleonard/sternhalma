@@ -84,7 +84,7 @@ function App() {
 	};
 
     const fetchScores = () => {
-        fetch(`${url0}api/score/`)
+        fetch(`${url0}get_score/`)
             .then((response) => response.json())
             .then((apiData: ModelScore[]) => {
                 const filledData = [
@@ -110,7 +110,7 @@ function App() {
         if (newScore < highestScore || scores.length<5 ) {
             const name = prompt('Congratulations! Would you like to leave your name on the ranking:')?.trim();
             if (name && name.length <= 20) {
-                fetch(`${url0}api/add_score/`, {
+                fetch(`${url0}add_score/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ score: newScore, name }),
@@ -134,11 +134,11 @@ function App() {
     };
 
 	const test1 = async () => {
-		// const score = parseInt(prompt('Enter a new score:') || '', 10);
-		// if (!isNaN(score)) {
-		// 	handleNewScore(score);
-		// }
-		alert('Du bist aber neugierig...')
+		const score = parseInt(prompt('Enter a new score:') || '', 10);
+		if (!isNaN(score)) {
+			handleNewScore(score);
+		}
+		// alert('Du bist aber neugierig...')
 	}
 	const klicken1 = async (coords: { x: number; y: number }) => {
 		if (!aktiv) return 
@@ -198,6 +198,7 @@ function App() {
 						<option value="3">3</option>
 					</select>
 				</div>
+				<input type="text" id="roomcode" name="roomcode" placeholder="Room number"></input>
 				<div id="ctn-btn">
 					<button onClick={starten}>Start</button>
 					<button onClick={reset}>Reset</button>
@@ -245,7 +246,4 @@ export default App
 // Accessing Specific Circle: The handleSetValid function takes coordinates and calls setValid(true) on the correct circle.
 
 // score list, one should not be able to click on the circles unless the game is started
-// 1 server - 1 room / player. let the other wait.
-// 1 server - multi rooms, create a instance for each room and direct the gamer to the room, python-socketio
-// save those instance to a dict and ...
-// ogs
+// test session, component reform for 4in1row, UI for invite code,

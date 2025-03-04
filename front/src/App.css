@@ -46,6 +46,11 @@ h1 {
     width: 3em;
     text-align: center;
 }
+input {
+    font-size: 1em;
+    width: 100%;
+    padding: 0.3em;
+}
 #ctn-btn {
     display: flex;
     gap: 0.5em;

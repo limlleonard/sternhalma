@@ -1,17 +1,14 @@
-import environ
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+load_dotenv() 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-env = environ.Env()
-environ.Env.read_env()
-SECRET_KEY = env("SECRET_KEY", default="unsafe-secret-key")
-
 DEBUG = True
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALLOWED_HOSTS = ['sternhalma.onrender.com', '127.0.0.1']
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,7 +40,7 @@ ROOT_URLCONF = 'back.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'front/dist')], # 
+        'DIRS': [os.path.join(BASE_DIR, 'front/dist')], # nach index.html suchen
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -61,19 +58,24 @@ WSGI_APPLICATION = 'back.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bjv43dmw65b7obui857u',
-        'USER': 'uwss14x03ljxhvrjdqvo',
-        'PASSWORD': 'sMoKyW9kA8TuyUCOEWDsI1YnzEgImQ', #env("DB_PASSWORD"),
-        'HOST': 'bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com',
-        'PORT': '50013',
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'bjv43dmw65b7obui857u',
+            'USER': 'uwss14x03ljxhvrjdqvo',
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': 'bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com',
+            'PORT': '50013',
+        }
+    }
 
 
 # Password validation
