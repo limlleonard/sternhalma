@@ -1,4 +1,6 @@
 import json
+import pickle
+import base64
 from django.shortcuts import render
 # from rest_framework import viewsets, status # class view
 from rest_framework.renderers import JSONRenderer # class view
@@ -6,25 +8,20 @@ from rest_framework.response import Response # update database
 from rest_framework.decorators import api_view, renderer_classes #action, update database
 from django.http import JsonResponse
 # from django.views.decorators.csrf import csrf_exempt
-import pickle
 from .spiel import Spiel
 from .models import Score
 from .serializers import SerializerScore
 
-spiel1 = Spiel()
+# spiel1 = Spiel()
 # Um ein Server für mehrere Spieler zu erstellen, darf man Spiel nicht als eine globale Variable erstellen
 
 def home(request):
     return render(request, "index.html")
 
 def return_board(request):
-    """return board is called first, so create spiel1 instance here"""
     request.session['test_home']='test_home'
-    print(request.session.keys())
-    # if "spiel" not in request.session:
-    # spiel1 = Spiel()
-    # request.session["spiel"] = pickle.dumps(spiel1)
-    # request.session['test1']='test1'
+    spiel1 = Spiel()
+    request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
     return JsonResponse(spiel1.board.lst_board_round, safe=False)
 
 # @csrf_exempt
@@ -34,9 +31,9 @@ def starten(request):
     print(request.session.keys())
     try:
         nr_player = int(request.data.get("nrPlayer", 0))  # DRF auto-parses JSON
-        # spiel1 = pickle.loads(request.session["spiel"])
+        spiel1 = pickle.loads(base64.b64decode(request.session.get('spiel').encode('utf-8')))
         spiel1.reset(nr_player)
-        # request.session["spiel"] = pickle.dumps(spiel1)
+        request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
         return Response(spiel1.get_ll_piece())  # DRF auto-handles JSON response
     except (TypeError, ValueError):
         return Response({"error": "Invalid input"}, status=400)
@@ -46,7 +43,9 @@ def starten(request):
 def klicken(request):
     try:
         coord_round = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
+        spiel1 = pickle.loads(base64.b64decode(request.session.get('spiel').encode('utf-8')))
         selected, valid_pos, neue_figuren, order, gewonnen = spiel1.klicken(coord_round)
+        request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
         return Response({
             "selected": selected,
             "validPos": valid_pos,

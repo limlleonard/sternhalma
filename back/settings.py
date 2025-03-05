@@ -6,7 +6,7 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG = True
+DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALLOWED_HOSTS = ['sternhalma.onrender.com', '127.0.0.1']
 
@@ -121,6 +121,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ]
 CORS_ALLOW_ALL_ORIGINS=True
 CORS_ALLOW_CREDENTIALS = True
+
+# SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+# SESSION_FILE_PATH = '/tmp'
 
 # SESSION_ENGINE = 'django.contrib.sessions.backends.cache' # default: django.contrib.sessions.models.Session
 # SESSION_CACHE_ALIAS = 'default'
