@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import './App.css'
 import {Circle, Piece, Valid, Selected} from "./circles"
-// const url0='http://127.0.0.1:8000/';
-const url0=`${window.location.origin}/`
+const url0='http://127.0.0.1:8000/';
+// const url0=`${window.location.origin}/`
 
 interface ModelScore {
     id: number;
@@ -247,4 +247,4 @@ export default App
 
 // score list, one should not be able to click on the circles unless the game is started
 // test session, component reform for 4in1row, UI for invite code,
-// save state of game in db
+// On this session branch, it suppose to create a new game instance for each user. It works for the react build version, but not the react dev version. Also deploying on render success but got 500.

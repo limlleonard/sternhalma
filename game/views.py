@@ -16,14 +16,16 @@ from .serializers import SerializerScore
 # Um ein Server für mehrere Spieler zu erstellen, darf man Spiel nicht als eine globale Variable erstellen
 
 def home(request):
-    return render(request, "index.html")
+    return render(request, "index.html") # from react build
 
 def return_board(request):
     request.session['test_home']='test_home'
-    spiel1 = Spiel() # 
-    # if room nr exist, then Spiel.objects.get(room=41)
-    # else new spiel
-    request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
+    if 'spiel' in request.session.keys():
+        print('Spiel has ben created')
+    else:
+        print('Create new game')
+        spiel1 = Spiel()
+        request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
     return JsonResponse(spiel1.board.lst_board_round, safe=False)
 
 # @csrf_exempt
