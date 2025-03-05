@@ -71,7 +71,8 @@ else:
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'bjv43dmw65b7obui857u',
             'USER': 'uwss14x03ljxhvrjdqvo',
-            'PASSWORD': os.getenv('DB_PASSWORD'),
+            # 'PASSWORD': os.getenv('DB_PASSWORD'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'), # on render
             'HOST': 'bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com',
             'PORT': '50013',
         }
