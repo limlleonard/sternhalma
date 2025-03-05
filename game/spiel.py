@@ -96,6 +96,10 @@ class Spieler():
         return [(2*CENTERX-x, 2*CENTERY-y) for (x,y) in lst_piece]
 
 class Spiel():
+    def save():
+        # save to django instance. 
+        # stones
+        pass
     def __init__(self, nr_spieler=2):
         self.board=Board()
         self.spieler=[]

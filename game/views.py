@@ -12,16 +12,18 @@ from .spiel import Spiel
 from .models import Score
 from .serializers import SerializerScore
 
-spiel1 = Spiel()
+# spiel1 = Spiel()
 # Um ein Server für mehrere Spieler zu erstellen, darf man Spiel nicht als eine globale Variable erstellen
 
 def home(request):
     return render(request, "index.html")
 
 def return_board(request):
-    # request.session['test_home']='test_home'
-    spiel1 = Spiel()
-    # request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
+    request.session['test_home']='test_home'
+    spiel1 = Spiel() # 
+    # if room nr exist, then Spiel.objects.get(room=41)
+    # else new spiel
+    request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
     return JsonResponse(spiel1.board.lst_board_round, safe=False)
 
 # @csrf_exempt
@@ -31,9 +33,9 @@ def starten(request):
     print(request.session.keys())
     try:
         nr_player = int(request.data.get("nrPlayer", 0))  # DRF auto-parses JSON
-        # spiel1 = pickle.loads(base64.b64decode(request.session.get('spiel').encode('utf-8')))
+        spiel1 = pickle.loads(base64.b64decode(request.session.get('spiel').encode('utf-8')))
         spiel1.reset(nr_player)
-        # request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
+        request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
         return Response(spiel1.get_ll_piece())  # DRF auto-handles JSON response
     except (TypeError, ValueError):
         return Response({"error": "Invalid input"}, status=400)
@@ -43,9 +45,9 @@ def starten(request):
 def klicken(request):
     try:
         coord_round = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
-        # spiel1 = pickle.loads(base64.b64decode(request.session.get('spiel').encode('utf-8')))
+        spiel1 = pickle.loads(base64.b64decode(request.session.get('spiel').encode('utf-8')))
         selected, valid_pos, neue_figuren, order, gewonnen = spiel1.klicken(coord_round)
-        # request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
+        request.session["spiel"]= base64.b64encode(pickle.dumps(spiel1)).decode('utf-8')
         return Response({
             "selected": selected,
             "validPos": valid_pos,
