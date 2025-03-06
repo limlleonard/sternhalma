@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import './App.css'
 import {Circle, Piece, Valid, Selected} from "./circles"
-const url0='http://127.0.0.1:8000/';
-// const url0=`${window.location.origin}/`
+const devMode=import.meta.env.MODE==='development'
+const url0=devMode ? 'http://127.0.0.1:8000/' : `${window.location.origin}/`;
+// const url0=
 
 interface ModelScore {
     id: number;
