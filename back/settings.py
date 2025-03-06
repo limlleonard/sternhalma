@@ -57,25 +57,25 @@ WSGI_APPLICATION = "back.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-if DEBUG:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+# if DEBUG:
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": "bjv43dmw65b7obui857u",
-            "USER": "uwss14x03ljxhvrjdqvo",
-            # 'PASSWORD': os.getenv('DB_PASSWORD'),
-            "PASSWORD": os.environ.get("DB_PASSWORD"),  # on render
-            "HOST": "bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com",
-            "PORT": "50013",
-        }
-    }
+}
+# else:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql",
+#             "NAME": "bjv43dmw65b7obui857u",
+#             "USER": "uwss14x03ljxhvrjdqvo",
+#             # 'PASSWORD': os.getenv('DB_PASSWORD'),
+#             "PASSWORD": os.environ.get("DB_PASSWORD"),  # on render
+#             "HOST": "bjv43dmw65b7obui857u-postgresql.services.clever-cloud.com",
+#             "PORT": "50013",
+#         }
+#     }
 
 
 # Password validation
