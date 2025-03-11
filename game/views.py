@@ -13,12 +13,12 @@ from rest_framework.decorators import (
 from django.http import JsonResponse
 
 # from django.views.decorators.csrf import csrf_exempt
-from .spiel import Spiel
+from .game import Game
 from .models import Score
 from .serializers import SerializerScore
 
-# spiel1 = Spiel()
-# Um ein Server für mehrere Spieler zu erstellen, darf man Spiel nicht als eine globale Variable erstellen
+# game1 = game()
+# Um ein Server für mehrere gameer zu erstellen, darf man game nicht als eine globale Variable erstellen
 
 
 def home(request):
@@ -27,18 +27,16 @@ def home(request):
 
 def return_board(request):
     request.session["test_home"] = "test_home"
-    if "spiel" in request.session.keys():
-        print("Spiel has ben created")
-        spiel1 = pickle.loads(
-            base64.b64decode(request.session.get("spiel").encode("utf-8"))
+    if "game" in request.session.keys():
+        print("Game has ben created")
+        game1 = pickle.loads(
+            base64.b64decode(request.session.get("game").encode("utf-8"))
         )
     else:
         print("Create new game")
-        spiel1 = Spiel()
-        request.session["spiel"] = base64.b64encode(pickle.dumps(spiel1)).decode(
-            "utf-8"
-        )
-    return JsonResponse(spiel1.board.lst_board_round, safe=False)
+        game1 = Game()
+        request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
+    return JsonResponse(game1.board.lst_board_int, safe=False)
 
 
 # @csrf_exempt
@@ -48,14 +46,12 @@ def starten(request):
     print(request.session.keys())
     try:
         nr_player = int(request.data.get("nrPlayer", 0))  # DRF auto-parses JSON
-        spiel1 = pickle.loads(
-            base64.b64decode(request.session.get("spiel").encode("utf-8"))
+        game1 = pickle.loads(
+            base64.b64decode(request.session.get("game").encode("utf-8"))
         )
-        spiel1.reset(nr_player)
-        request.session["spiel"] = base64.b64encode(pickle.dumps(spiel1)).decode(
-            "utf-8"
-        )
-        return Response(spiel1.get_ll_piece())  # DRF auto-handles JSON response
+        game1.reset(nr_player)
+        request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
+        return Response(game1.get_ll_piece())  # DRF auto-handles JSON response
     except (TypeError, ValueError):
         return Response({"error": "Invalid input"}, status=400)
 
@@ -65,13 +61,11 @@ def starten(request):
 def klicken(request):
     try:
         coord_round = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
-        spiel1 = pickle.loads(
-            base64.b64decode(request.session.get("spiel").encode("utf-8"))
+        game1 = pickle.loads(
+            base64.b64decode(request.session.get("game").encode("utf-8"))
         )
-        selected, valid_pos, neue_figuren, order, gewonnen = spiel1.klicken(coord_round)
-        request.session["spiel"] = base64.b64encode(pickle.dumps(spiel1)).decode(
-            "utf-8"
-        )
+        selected, valid_pos, neue_figuren, order, gewonnen = game1.klicken(coord_round)
+        request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
         return Response(
             {
                 "selected": selected,
@@ -100,13 +94,13 @@ def add_score(request):
     name = request.data.get("name")
 
     if not score or not name or len(name) > 20:
-        return Response({"error": "Invalid input"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Invalid input"}, status=400)
     Score.objects.create(score=score, name=name)
     scores = Score.objects.all().order_by("score")
     if scores.count() > 5:
         scores.last().delete()
 
-    return Response({"success": "Score added"}, status=status.HTTP_201_CREATED)
+    return Response({"success": "Score added"}, status=201)
 
 
 # class ViewsetScore(viewsets.ModelViewSet):

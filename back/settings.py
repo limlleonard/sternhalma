@@ -1,11 +1,9 @@
 from pathlib import Path
 import os
-
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = False
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -54,9 +52,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "back.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 # if DEBUG:
 DATABASES = {
     "default": {
@@ -101,10 +96,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
 USE_I18N = True
-
 USE_TZ = True
 
 # STATIC_URL='static/'

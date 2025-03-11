@@ -135,11 +135,11 @@ function App() {
     };
 
 	const test1 = async () => {
-		const score = parseInt(prompt('Enter a new score:') || '', 10);
-		if (!isNaN(score)) {
-			handleNewScore(score);
-		}
-		// alert('Du bist aber neugierig...')
+		// const score = parseInt(prompt('Enter a new score:') || '', 10);
+		// if (!isNaN(score)) {
+		// 	handleNewScore(score);
+		// }
+		alert('Du bist aber neugierig...')
 	}
 	const klicken1 = async (coords: { x: number; y: number }) => {
 		if (!aktiv) return 
@@ -207,17 +207,8 @@ function App() {
 				<p>Timer: <span id="timer" ref={timerRef}>{formatTime(seconds)}</span></p>
 				<p>Number of moves: <span id="nrMoves">{nrMoves}</span></p>
 				<p>Player in turn: <span className={`circleSmall farbe${order}`}></span></p>
-				<p>High score list:</p>
-				<table>
-					<tbody>
-						{bestList.map((item) => (
-							<tr key={item.id}>
-								<td>{item.score}</td>
-								<td>{item.name}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
+				<a href="https://github.com/limlleonard/sternhalma" target="_blank">Link to source code</a>
+				<br />
 				<button onClick={test1}>Test1</button>
 			</section>
 			<div className="board" id="board" >
@@ -249,3 +240,15 @@ export default App
 // score list, one should not be able to click on the circles unless the game is started
 // test session, component reform for 4in1row, UI for invite code,
 // On this session branch, it suppose to create a new game instance for each user. It works for the react build version, but not the react dev version. Also deploying on render success but got 500.
+
+{/* <p>High score list:</p>
+<table>
+	<tbody>
+		{bestList.map((item) => (
+			<tr key={item.id}>
+				<td>{item.score}</td>
+				<td>{item.name}</td>
+			</tr>
+		))}
+	</tbody>
+</table> */}

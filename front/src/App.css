@@ -67,6 +67,9 @@ input {
     border-radius: 50%;
     vertical-align: middle; /* Aligns with the text */
 }
+a  {
+    color: darkblue;
+}
 /* table, td {
     border: 1px solid;
 } */

@@ -8,8 +8,17 @@ DISTCC = 40  # center-center distance
 Middle_Layer = 4  # This is the number of layers of circles outside of the center circle, it builds up the middle of the board as a hexagon. Beyond this layer will be 6 corners
 
 
-def rotate_point(pc, p1, nr_angle):
-    """"""
+def rotate_point(
+    pc: tuple[int, int], p1: tuple[int, int], nr_angle: int
+) -> tuple[int, int]:
+    """
+    Rotate one point (p1) a certain angle around another point (pc). In the game, it should only rotate 60*nr_angle degree. nr_angle should be a int between 0-5
+    Args:
+        pc (tuple[int,int]): center point.
+        p1 (tuple[int,int]): rotate point.
+    Returns:
+        tuple[int,int]: rotated point.
+    """
     cx, cy = pc
     x1, y1 = p1
     angle_rad = 2 * pi * nr_angle / 6
@@ -27,11 +36,13 @@ def rotate_point(pc, p1, nr_angle):
 
 class Board:
     def __init__(self):
-        """(nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
+        """
+        A customized coordinate is used for defining all the poitns on board but not used yet.
+        (nr_layer, nr_beam(0-5), nr_side perpendicular to beam):(x,y)
         lst_board, lst_board_round saves the coord of all positions in the same order"""
         self.dct_board = self.init_dict()
         self.lst_board = [self.dct_board[a1] for a1 in self.dct_board]
-        self.lst_board_round = [
+        self.lst_board_int = [
             (round(coord[0]), round(coord[1])) for coord in self.lst_board
         ]
 
@@ -63,31 +74,35 @@ class Board:
         return dct_board
 
 
-class Spieler:
+class Player:
     def __init__(self, init_dir=1):
-        self.lst_piece = self.init_group(init_dir)
-        self.lst_piece_round = [
+        """
+        Args:
+            init_dir: int: initial direction 0-5. (In which corner does it start playing)
+        """
+        self.lst_piece = self.init_pieces(init_dir)
+        self.lst_piece_int = [
             (round(coord[0]), round(coord[1])) for coord in self.lst_piece
         ]
-        self.lst_target = self.init_group(init_dir + 3)
-        self.lst_target_round = [
+        self.lst_target = self.init_pieces(
+            init_dir + 3
+        )  # +3 means + 180°, to the opposite side
+        self.lst_target_int = [
             (round(coord[0]), round(coord[1])) for coord in self.lst_target
         ]
         self.selected = None  # coord of the selected figur
         self.valid_pos = []
         self.gewonnen = False
 
-    def init_group(self, init_dir):
-        """Initialize die Stelle der"""
+    def init_pieces(self, init_dir):
+        """Initialize the pieces"""
         lst_piece = []
         for k in range(Middle_Layer + 1, Middle_Layer * 2 + 1):
             radius = DISTCC * k  # Distance for the current layer
             num_circles_layer = k  # Number of circles in this layer
             num_to_skip = k - Middle_Layer
 
-            angle = (
-                init_dir * 2 * pi
-            ) / 6  # init_dir entscheidet, so die Stücke am Anfang legen
+            angle = (init_dir * 2 * pi) / 6
             x = CENTERX + radius * cos(angle)
             y = CENTERY + radius * sin(angle)
             # Fantacy 'next point' to calculate the coordinate of points in between
@@ -101,26 +116,26 @@ class Spieler:
                 lst_piece.append((round(x2), round(y2)))
         return lst_piece
 
-    def win_check(self):
-        sorted_lst_piece = sorted(self.lst_piece_round)
-        sorted_lst_ziel = sorted(self.lst_target_round)
+    def win_check(self) -> bool:
+        sorted_lst_piece = sorted(self.lst_piece_int)
+        sorted_lst_ziel = sorted(self.lst_target_int)
         if sorted_lst_piece == sorted_lst_ziel:
             self.gewonnen = True
 
-    def rotate(self, lst_piece):
+    def rotate(self, lst_piece: tuple) -> tuple:
         return [(2 * CENTERX - x, 2 * CENTERY - y) for (x, y) in lst_piece]
 
 
-class Spiel:
-    def save():
+class Game:
+    def save(self):
         # save to django instance.
         # stones
         pass
 
-    def __init__(self, nr_spieler=2):
+    def __init__(self):
         self.board = Board()
-        self.spieler = []
-        self.order = 0
+        self.players = []
+        self.order = 0  # who is in turn
         self.dct_dir = {
             1: [1],
             2: [1, 4],
@@ -128,24 +143,25 @@ class Spiel:
             4: [1, 4, 2, 5],
             5: [1, 3, 5, 2, 4],
             6: [1, 3, 5, 2, 4, 6],
-        }
+        }  # depending on nr of players, the position of each player
         # self.reset(nr_spieler)
         # self.spieler_rotate=[]
 
-    def reset(self, nr_spieler=2):
-        self.spieler = []
-        for nr1 in range(nr_spieler):
-            init_dir = self.dct_dir[nr_spieler][nr1]
-            self.spieler.append(Spieler(init_dir))
+    def reset(self, nr_player=2) -> None:
+        """Initialize player"""
+        self.players = []
+        for nr1 in range(nr_player):
+            init_dir = self.dct_dir[nr_player][nr1]
+            self.players.append(Player(init_dir))
         self.order = 0  # self.spieler[self.order] ist der Spieler, der dran ist
 
-    def get_precise_coord(self, coord_round):
-        """find the index in lst_board_round, then return the value from lst_board"""
-        return self.board.lst_board[self.board.lst_board_round.index(coord_round)]
+    def get_precise_coord(self, coord_int: tuple[int, ...]) -> tuple[float, ...]:
+        """find the index in lst_board_int, then return the value from lst_board since they have the same order"""
+        return self.board.lst_board[self.board.lst_board_int.index(coord_int)]
 
-    def find_neighbors(self, coord_round):
-        """6 positionen rund um der Figur + 6 positionen darüber"""
-        x, y = self.get_precise_coord(coord_round)
+    def find_neighbors(self, coord_int: tuple[int, ...]) -> tuple[int, ...]:
+        """6 positions around the figure + 6 positionen over them"""
+        x, y = self.get_precise_coord(coord_int)
         lst_neighbor = []
         for i in range(6):
             angle = i * 2 * pi / 6
@@ -158,100 +174,104 @@ class Spiel:
             lst_neighbor.append(((x1, y1), (x2, y2)))
         return lst_neighbor
 
-    def get_ll_piece(self):
+    def get_ll_piece(self) -> list[list[tuple[int, int]]]:
+        """get a list (players) of list (pieces)"""
         ll_piece = []  # Figuren aller Farben berückwichtigen
-        for spieler1 in self.spieler:
-            ll_piece.append(spieler1.lst_piece_round)
+        for spieler1 in self.players:
+            ll_piece.append(spieler1.lst_piece_int)
         return ll_piece
 
-    def find_valid_pos(self, coord_round):
+    def find_valid_pos(self, coord_int: tuple[int, int]) -> list[tuple[int, int]]:
+        """find valid position where a piece could go"""
         visited = set()
         valid_pos = []
         ll_piece = self.get_ll_piece()
         lst_piece = [
             coord for figuren in ll_piece for coord in figuren
         ]  # Figuren aller Farben berückwichtigen
-        lst_neighbor = self.find_neighbors(coord_round)
+        lst_neighbor = self.find_neighbors(coord_int)
         for coord1, _ in lst_neighbor:  # no jump
-            # if it is in board but not in pieces
-            if coord1 in self.board.lst_board_round and coord1 not in lst_piece:
+            if (
+                coord1 in self.board.lst_board_int and coord1 not in lst_piece
+            ):  # if it is in board but not in pieces
                 valid_pos.append(coord1)
 
-        def dfs(coord_round):
-            if coord_round in visited:
+        def dfs(coord_int: tuple[int, int]):
+            """depth first search algorithm"""
+            if coord_int in visited:
                 return  # Skip if already visited
-            visited.add(coord_round)  # Mark node as visited
-            valid_pos.append(coord_round)  # Add node to connected list
+            visited.add(coord_int)  # Mark node as visited
+            valid_pos.append(coord_int)  # Add node to connected list
 
-            lst_neighbor1 = self.find_neighbors(coord_round)
+            lst_neighbor1 = self.find_neighbors(coord_int)
             for coord1, coord2 in lst_neighbor1:
                 if (
                     coord2 not in visited
-                    and coord1 in lst_piece
-                    and coord2 not in lst_piece
-                    and coord2 in self.board.lst_board_round
+                    and coord1 in lst_piece  # there is one piece to jump over
+                    and coord2 not in lst_piece  # over the piece there is space
+                    and coord2 in self.board.lst_board_int
                 ):
                     dfs(coord2)
 
-        dfs(coord_round)
+        dfs(coord_int)
         return valid_pos
 
-    def klicken(self, coord_round):
-        # coord_from=coord_to=None
-        neue_figuren = None
-        spieler = self.spieler[self.order]
-        if coord_round in spieler.lst_piece_round:  # auf einer der Figuren klickt
-            # if spieler.selected is not None:
-            #     spieler.valid_pos=[]
-            spieler.valid_pos = self.find_valid_pos(coord_round)
+    def klicken(self, coord_int: tuple[int, int]):
+        """klicking on a piece or a field,"""
+        new_figures = None
+        players = self.players[self.order]
+        if coord_int in players.lst_piece_int:  # click on a piece
+            players.valid_pos = self.find_valid_pos(coord_int)
             if (
-                len(spieler.valid_pos) > 0
-            ):  # Nur ein Figur, das bewegen kann, darf gewählt werden
-                spieler.selected = coord_round
-        elif spieler.selected and coord_round in spieler.valid_pos:
+                len(players.valid_pos) > 0
+            ):  # you can only select a piece, that can be moved
+                players.selected = coord_int
+        elif players.selected and coord_int in players.valid_pos:  # click on a field
             # move piece, pop the old piece and insert the new piece
-            index_from = spieler.lst_piece_round.index(spieler.selected)
+            index_from = players.lst_piece_int.index(players.selected)
             # coord_from=spieler.selected
-            spieler.lst_piece_round.pop(index_from)
-            spieler.lst_piece.pop(index_from)
-            spieler.lst_piece_round.append(coord_round)
-            spieler.lst_piece.append(self.get_precise_coord(coord_round))
+            players.lst_piece_int.pop(index_from)
+            players.lst_piece.pop(index_from)
+            players.lst_piece_int.append(coord_int)
+            players.lst_piece.append(self.get_precise_coord(coord_int))
             # coord_to=coord_round
-            spieler.selected = None
-            spieler.valid_pos = []
-            spieler.win_check()
-            self.order = (self.order + 1) % len(self.spieler)  # next
-            neue_figuren = (
+            players.selected = None
+            players.valid_pos = []
+            players.win_check()
+            self.order = (self.order + 1) % len(
+                self.players
+            )  # next play will be in turn
+            new_figures = (
                 self.get_ll_piece()
-            )  # wenn neue_figuren nicht None, bedeutet ein Bewegung wird gemacht
+            )  # if new_figures is not none, it means a piece is moved
         return (
-            spieler.selected,
-            spieler.valid_pos,
-            neue_figuren,
+            players.selected,
+            players.valid_pos,
+            new_figures,
             self.order,
-            spieler.gewonnen,
+            players.gewonnen,
         )
 
-    def get_rotate_spieler(self, nr_angle):
+    def get_rotate_spieler(self, nr_angle: int):
         """Rotate all the player and return them"""
-        spieler_rotate = []
-        for spieler_alt in self.spieler:
-            spieler_neu = spieler_alt.copy()
-            spieler_neu.lst_piece = [
+        player_rotate = []
+        for player_old in self.players:
+            player_new = player_old.copy()
+            player_new.lst_piece = [
                 rotate_point((CENTERX, CENTERY), p1, nr_angle)
-                for p1 in spieler_neu.lst_piece
+                for p1 in player_new.lst_piece
             ]
-            spieler_neu.lst_piece_round = [
-                (round(coord[0]), round(coord[1])) for coord in spieler_neu.lst_piece
+            player_new.lst_piece_int = [
+                (round(coord[0]), round(coord[1])) for coord in player_new.lst_piece
             ]
-            spieler_neu.lst_target = [
+            player_new.lst_target = [
                 rotate_point((CENTERX, CENTERY), p1, nr_angle)
-                for p1 in spieler_neu.lst_target
+                for p1 in player_new.lst_target
             ]
-            spieler_neu.lst_target_round = [
-                (round(coord[0]), round(coord[1])) for coord in spieler_neu.lst_target
+            player_new.lst_target_round = [
+                (round(coord[0]), round(coord[1])) for coord in player_new.lst_target
             ]
-        return spieler_rotate
+        return player_rotate
 
 
 # todos: reset, win check, add player, turn board, swap turns
