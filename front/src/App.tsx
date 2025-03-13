@@ -23,7 +23,9 @@ function App() {
 	const [order, setOrder] = useState<number>(0);
 	const [nrPlayer, setNrPlayer] = useState<number>(1);
     const [bestList, setBestList] = useState<ModelScore[]>([]);
-	const [aktiv, setAktiv] = useState(false);
+	const [aktiv, setAktiv] = useState<boolean>(false); // if a game is running
+	const [roomnr, setRoomnr] = useState<number>(0);
+    const [tempRoomnr, setTempRoomnr] = useState<string>("0");
 
 	const formatTime = (seconds: number) => {
 		const minutes = Math.floor(seconds / 60);
@@ -41,13 +43,51 @@ function App() {
 			const response = await fetch(`${url0}starten/`, {
 				method: "POST",
 				headers: {"Content-Type": "application/json",},
-				body: JSON.stringify({ nrPlayer }),
+				body: JSON.stringify({ nrPlayer, roomnr }),
 			});
 			const llPiece: [number, number][][] = await response.json();
 			setAAFigur(llPiece);
 			setAktiv(true)
 		} catch (err) {
 			console.error("Error fetching pieces:", err);
+		}
+	};
+	const saveState = async () => {
+		try {
+			const response = await fetch(`${url0}save_state/`, {
+				method: "POST",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ roomnr }),
+			});
+			const data = await response.json();
+			alert(data.message); // Show popup with response message
+
+		} catch (err) {
+			console.error("Error saving state:", err);
+		}
+	};
+	const reloadState = async () => {
+		try {
+			const response = await fetch(`${url0}reload_state/?roomnr=${roomnr}`, {
+				method: "GET",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+			const data = await response.json();
+			if (data.found) {
+				setAAFigur(data.ll_piece);
+				setOrder(data.order);
+				setAktiv(true);
+			} else {
+				alert(`No game is saved for the room number ${roomnr}`)
+			}
+		} catch (err) {
+			console.error("Error by reloading state:", err);
 		}
 	};
 
@@ -77,7 +117,8 @@ function App() {
 				throw new Error("Received non-JSON response");
 			}
 			const lstBoard: [number, number][] = await response.json();
-			const lstBoardRound:[number, number][]= lstBoard.map(([x, y]:[number, number]) => [Math.round(x), Math.round(y)]);
+			const lstBoardRound:[number, number][]= lstBoard.map(
+				([x, y]:[number, number]) => [Math.round(x), Math.round(y)]);
 			setArrCircle(lstBoardRound);
 		} catch (err) {
 			console.error("Error fetching board data:", err);
@@ -139,7 +180,7 @@ function App() {
 		// if (!isNaN(score)) {
 		// 	handleNewScore(score);
 		// }
-		alert('Du bist aber neugierig...')
+		alert(roomnr)
 	}
 	const klicken1 = async (coords: { x: number; y: number }) => {
 		if (!aktiv) return 
@@ -151,7 +192,7 @@ function App() {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ xr, yr }),
+				body: JSON.stringify({ xr, yr, roomnr }),
 			});
 			const result = await response.json();
 			setSelected(null);
@@ -199,10 +240,25 @@ function App() {
 						<option value="3">3</option>
 					</select>
 				</div>
-				<input type="text" id="roomcode" name="roomcode" placeholder="Room number"></input>
+				<div className="ctn-input">
+					<label htmlFor="roomnr">Room number: </label>
+					<input
+						type="text"
+						id="roomnr"
+						name="roomnr"
+						value={tempRoomnr}
+						onChange={(e) => setTempRoomnr(e.target.value)}
+						onBlur={(e) => setRoomnr(Number(e.target.value) || 0)}
+					/>
+					{/* <input type="text" id="roomnr" name="roomnr" value={roomnr}
+						onChange={(e) => setRoomnr(e.target.value)}
+						onBlur={(e) => setRoomnr(Number(e.target.value) || 0)}></input> */}
+				</div>
 				<div id="ctn-btn">
-					<button onClick={starten}>Start</button>
-					<button onClick={reset}>Reset</button>
+					<button onClick={starten} title="Start a new game">Start</button>
+					<button onClick={reset} title="Reset the game">Reset</button>
+					<button onClick={saveState} title="Save the game with the room number">Save</button>
+					<button onClick={reloadState} title="Reload the saved game with the room number">Reload</button>
 				</div>
 				<p>Timer: <span id="timer" ref={timerRef}>{formatTime(seconds)}</span></p>
 				<p>Number of moves: <span id="nrMoves">{nrMoves}</span></p>
@@ -239,7 +295,9 @@ export default App
 
 // score list, one should not be able to click on the circles unless the game is started
 // test session, component reform for 4in1row, UI for invite code,
-// On this session branch, it suppose to create a new game instance for each user. It works for the react build version, but not the react dev version. Also deploying on render success but got 500.
+// On this session branch, it suppose to create a new game instance for each user.
+// It works for the react build version, but not the react dev version.
+// Also deploying on render success but got 500.
 
 {/* <p>High score list:</p>
 <table>

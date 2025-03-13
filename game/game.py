@@ -1,4 +1,5 @@
 from math import pi, cos, sin
+from .models import Game_state
 
 width_board, height_board = 720, 720
 CENTERX, CENTERY = width_board / 2, height_board / 2
@@ -46,7 +47,7 @@ class Board:
             (round(coord[0]), round(coord[1])) for coord in self.lst_board
         ]
 
-    def init_dict(self):
+    def init_dict(self) -> dict:
         dct_board = {}
         dct_board[(0, 0, 0)] = (CENTERX, CENTERY)
         for nr_layer in range(1, Middle_Layer * 2 + 1):
@@ -75,18 +76,23 @@ class Board:
 
 
 class Player:
-    def __init__(self, init_dir=1):
+    def __init__(self, init_dir=1, state: list | None = None):
         """
         Args:
             init_dir: int: initial direction 0-5. (In which corner does it start playing)
+            state: save lst_piece and lst_target
         """
-        self.lst_piece = self.init_pieces(init_dir)
+        if state is not None:
+            self.lst_piece = [tuple(coord) for coord in state[0]]
+            self.lst_target = [tuple(coord) for coord in state[1]]
+        else:
+            self.lst_piece = self.init_pieces(init_dir)
+            self.lst_target = self.init_pieces(
+                init_dir + 3
+            )  # +3 means + 180°, to the opposite side
         self.lst_piece_int = [
             (round(coord[0]), round(coord[1])) for coord in self.lst_piece
         ]
-        self.lst_target = self.init_pieces(
-            init_dir + 3
-        )  # +3 means + 180°, to the opposite side
         self.lst_target_int = [
             (round(coord[0]), round(coord[1])) for coord in self.lst_target
         ]
@@ -95,7 +101,7 @@ class Player:
         self.gewonnen = False
 
     def init_pieces(self, init_dir):
-        """Initialize the pieces"""
+        """Initialize the pieces, it is similar to init board, but just create one corner"""
         lst_piece = []
         for k in range(Middle_Layer + 1, Middle_Layer * 2 + 1):
             radius = DISTCC * k  # Distance for the current layer
@@ -125,17 +131,20 @@ class Player:
     def rotate(self, lst_piece: tuple) -> tuple:
         return [(2 * CENTERX - x, 2 * CENTERY - y) for (x, y) in lst_piece]
 
+    def get_state(self):
+        return [
+            self.lst_piece,
+            self.lst_target,
+        ]
+
 
 class Game:
-    def save(self):
-        # save to django instance.
-        # stones
-        pass
-
-    def __init__(self):
+    def __init__(
+        self, roomnr=0, nr_player=0, state_players: list | None = None, order=0
+    ):
+        """game will be either initialized from 0 or from a given state"""
         self.board = Board()
-        self.players = []
-        self.order = 0  # who is in turn
+        self.roomnr = roomnr
         self.dct_dir = {
             1: [1],
             2: [1, 4],
@@ -144,16 +153,20 @@ class Game:
             5: [1, 3, 5, 2, 4],
             6: [1, 3, 5, 2, 4, 6],
         }  # depending on nr of players, the position of each player
-        # self.reset(nr_spieler)
-        # self.spieler_rotate=[]
-
-    def reset(self, nr_player=2) -> None:
-        """Initialize player"""
-        self.players = []
-        for nr1 in range(nr_player):
-            init_dir = self.dct_dir[nr_player][nr1]
-            self.players.append(Player(init_dir))
-        self.order = 0  # self.spieler[self.order] ist der Spieler, der dran ist
+        if nr_player > 0 and state_players is None:
+            self.order = 0  # who is in turn
+            self.players = []
+            for nr1 in range(nr_player):
+                init_dir = self.dct_dir[nr_player][nr1]
+                self.players.append(Player(init_dir))
+        elif nr_player == 0 and state_players is not None:
+            self.order = order
+            self.players = [Player(state=state) for state in state_players]
+        else:
+            print(
+                f"roomnr: {roomnr}, nr_player: {nr_player}, ll_pieces: {state_players}, order: {order}"
+            )
+            raise Exception("Given vars cannot create a new game")
 
     def get_precise_coord(self, coord_int: tuple[int, ...]) -> tuple[float, ...]:
         """find the index in lst_board_int, then return the value from lst_board since they have the same order"""
@@ -177,8 +190,8 @@ class Game:
     def get_ll_piece(self) -> list[list[tuple[int, int]]]:
         """get a list (players) of list (pieces)"""
         ll_piece = []  # Figuren aller Farben berückwichtigen
-        for spieler1 in self.players:
-            ll_piece.append(spieler1.lst_piece_int)
+        for player1 in self.players:
+            ll_piece.append(player1.lst_piece_int)
         return ll_piece
 
     def find_valid_pos(self, coord_int: tuple[int, int]) -> list[tuple[int, int]]:
@@ -229,7 +242,7 @@ class Game:
         elif players.selected and coord_int in players.valid_pos:  # click on a field
             # move piece, pop the old piece and insert the new piece
             index_from = players.lst_piece_int.index(players.selected)
-            # coord_from=spieler.selected
+            # coord_from=player.selected
             players.lst_piece_int.pop(index_from)
             players.lst_piece.pop(index_from)
             players.lst_piece_int.append(coord_int)
@@ -238,12 +251,12 @@ class Game:
             players.selected = None
             players.valid_pos = []
             players.win_check()
-            self.order = (self.order + 1) % len(
-                self.players
-            )  # next play will be in turn
+            self.order = (self.order + 1) % len(self.players)
             new_figures = (
                 self.get_ll_piece()
             )  # if new_figures is not none, it means a piece is moved
+        else:
+            print(coord_int, players.lst_piece_int)
         return (
             players.selected,
             players.valid_pos,
@@ -252,7 +265,7 @@ class Game:
             players.gewonnen,
         )
 
-    def get_rotate_spieler(self, nr_angle: int):
+    def get_rotate_player(self, nr_angle: int):
         """Rotate all the player and return them"""
         player_rotate = []
         for player_old in self.players:
@@ -272,6 +285,22 @@ class Game:
                 (round(coord[0]), round(coord[1])) for coord in player_new.lst_target
             ]
         return player_rotate
+
+    def save_state(self) -> None:
+        state_players = [p1.get_state() for p1 in self.players]
+        Game_state.objects.filter(roomnr=self.roomnr).delete()
+        Game_state.objects.create(
+            order=self.order, roomnr=self.roomnr, state_players=state_players
+        )
+
+
+class Games:
+    def __init__(self):
+        self.lst_game = []
+
+    def create_game(self):
+        game1 = Game()
+        self.lst_game.append(game1)
 
 
 # todos: reset, win check, add player, turn board, swap turns

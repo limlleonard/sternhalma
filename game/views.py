@@ -13,12 +13,13 @@ from rest_framework.decorators import (
 from django.http import JsonResponse
 
 # from django.views.decorators.csrf import csrf_exempt
-from .game import Game
-from .models import Score
+from .game import Game, Board
+from .models import Score, Game_state
 from .serializers import SerializerScore
 
-# game1 = game()
-# Um ein Server für mehrere gameer zu erstellen, darf man game nicht als eine globale Variable erstellen
+board1 = Board()  # to initialize board when the game is loaded for the first time
+dct_game = {}
+roomnr = 0
 
 
 def home(request):
@@ -26,34 +27,39 @@ def home(request):
 
 
 def return_board(request):
-    request.session["test_home"] = "test_home"
-    if "game" in request.session.keys():
-        print("Game has ben created")
-        game1 = pickle.loads(
-            base64.b64decode(request.session.get("game").encode("utf-8"))
-        )
-    else:
-        print("Create new game")
-        game1 = Game()
-        request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
-    return JsonResponse(game1.board.lst_board_int, safe=False)
+    # request.session["test_home"] = "test_home"
+    # if "game" in request.session.keys():
+    #     game1 = pickle.loads(
+    #         base64.b64decode(request.session.get("game").encode("utf-8"))
+    #     )
+    # else:
+    #     game1 = Game()
+    #     request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
+    return JsonResponse(board1.lst_board_int, safe=False)
 
 
 # @csrf_exempt
 @api_view(["POST"])
 def starten(request):
     """this should start game. Front should send nr_player here and reset game"""
-    print(request.session.keys())
     try:
-        nr_player = int(request.data.get("nrPlayer", 0))  # DRF auto-parses JSON
-        game1 = pickle.loads(
-            base64.b64decode(request.session.get("game").encode("utf-8"))
-        )
-        game1.reset(nr_player)
-        request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
-        return Response(game1.get_ll_piece())  # DRF auto-handles JSON response
-    except (TypeError, ValueError):
+        nr_player = int(request.data.get("nrPlayer", 0))
+        roomnr = int(request.data.get("roomnr", 0))
+        dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
+        return Response(dct_game[roomnr].get_ll_piece())
+    except Exception as e:
+        print(e)
         return Response({"error": "Invalid input"}, status=400)
+    # try:
+    #     nr_player = int(request.data.get("nrPlayer", 0))  # DRF auto-parses JSON
+    #     game1 = pickle.loads(
+    #         base64.b64decode(request.session.get("game").encode("utf-8"))
+    #     )
+    #     game1.reset(nr_player)
+    #     request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
+    #     return Response(game1.get_ll_piece())  # DRF auto-handles JSON response
+    # except (TypeError, ValueError):
+    #     return Response({"error": "Invalid input"}, status=400)
 
 
 # @csrf_exempt  # This disables 'Cross-site request forgery' for this view
@@ -61,11 +67,14 @@ def starten(request):
 def klicken(request):
     try:
         coord_round = (int(request.data.get("xr", 0)), int(request.data.get("yr", 0)))
-        game1 = pickle.loads(
-            base64.b64decode(request.session.get("game").encode("utf-8"))
+        roomnr = int(request.data.get("roomnr", 0))
+        # game1 = pickle.loads(
+        #     base64.b64decode(request.session.get("game").encode("utf-8"))
+        # )
+        selected, valid_pos, neue_figuren, order, gewonnen = dct_game[roomnr].klicken(
+            coord_round
         )
-        selected, valid_pos, neue_figuren, order, gewonnen = game1.klicken(coord_round)
-        request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
+        # request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
         return Response(
             {
                 "selected": selected,
@@ -101,6 +110,41 @@ def add_score(request):
         scores.last().delete()
 
     return Response({"success": "Score added"}, status=201)
+
+
+@api_view(["POST"])
+def save_state(request):
+    roomnr = int(request.data.get("roomnr", 0))
+    if roomnr in dct_game:
+        dct_game[roomnr].save_state()
+        return Response({"message": "game saved"}, status=201)
+    else:
+        return Response({"message": "game not saved"}, status=201)
+
+
+@api_view(["GET"])
+def reload_state(request):
+    """Search in DB, if exist return"""
+    # roomnr = int(request.data.get("roomnr", 0))
+    roomnr = int(request.GET.get("roomnr"))
+    raw_states = Game_state.objects.filter(roomnr=roomnr)
+    lst_state = list(raw_states.values("order", "roomnr", "state_players"))
+    if not raw_states.exists():
+        return Response({"found": False})
+    dct_game[roomnr] = Game(
+        roomnr=roomnr,
+        state_players=lst_state[0]["state_players"],
+        order=lst_state[0]["order"],
+    )
+    return Response(
+        {
+            "found": True,
+            "ll_piece": dct_game[roomnr].get_ll_piece(),
+            "order": lst_state[0]["order"],
+        }
+    )
+    # except Game_state.DoesNotExist:
+    #     return Response({})
 
 
 # class ViewsetScore(viewsets.ModelViewSet):
