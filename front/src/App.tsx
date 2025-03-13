@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react"; // useRef
 import './App.css'
 import {Circle, Piece, Valid, Selected} from "./circles"
 const devMode=import.meta.env.MODE==='development'
@@ -12,10 +12,10 @@ interface ModelScore {
 }
 function App() {
 	// const [count, setCount] = useState(0)
-	const timerRef = useRef<HTMLDivElement>(null);
+	// const timerRef = useRef<HTMLDivElement>(null);
 	const [nrMoves, setNrMoves] = useState(0);
-	const [seconds, setSeconds] = useState(0);
-	const [timerInterval, setTimerInterval] = useState<number | null>(null);
+	// const [seconds, setSeconds] = useState(0);
+	// const [timerInterval, setTimerInterval] = useState<number | null>(null);
 	const [selected, setSelected] = useState<[number, number] | null>(null);
 	const [arrCircle, setArrCircle] = useState<[number,number][]>([]);
 	const [aaFigur, setAAFigur] = useState<[number,number][][]>([]); // array of array of figur
@@ -24,30 +24,37 @@ function App() {
 	const [nrPlayer, setNrPlayer] = useState<number>(1);
     const [bestList, setBestList] = useState<ModelScore[]>([]);
 	const [aktiv, setAktiv] = useState<boolean>(false); // if a game is running
-	const [roomnr, setRoomnr] = useState<number>(0);
-    const [tempRoomnr, setTempRoomnr] = useState<string>("0");
 
-	const formatTime = (seconds: number) => {
-		const minutes = Math.floor(seconds / 60);
-		const remainingSeconds = seconds % 60;
-		return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-	};
+    const initialRoomNr = Math.floor(Math.random() * 10); // Generate random number between 0-9
+    const [roomnr, setRoomnr] = useState<number>(initialRoomNr);
+    const [tempRoomnr, setTempRoomnr] = useState<string>(initialRoomNr.toString());
+
+	// const formatTime = (seconds: number) => {
+	// 	const minutes = Math.floor(seconds / 60);
+	// 	const remainingSeconds = seconds % 60;
+	// 	return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+	// };
 
 	const starten = async () => {
-		if (timerInterval) return;
-		const interval = setInterval(() => {
-			setSeconds((prev) => prev + 1);
-		}, 1000);
-		setTimerInterval(interval);
+		// if (timerInterval) return;
+		// const interval = setInterval(() => {
+		// 	setSeconds((prev) => prev + 1);
+		// }, 1000);
+		// setTimerInterval(interval);
 		try {
 			const response = await fetch(`${url0}starten/`, {
 				method: "POST",
 				headers: {"Content-Type": "application/json",},
 				body: JSON.stringify({ nrPlayer, roomnr }),
 			});
-			const llPiece: [number, number][][] = await response.json();
-			setAAFigur(llPiece);
-			setAktiv(true)
+			const data = await response.json();
+			if (data.exist) {
+				alert("The room is taken, please choose another room number");
+			} else {
+				const llPiece: [number, number][][] = data.ll_piece;
+				setAAFigur(llPiece);
+				setAktiv(true);
+			}
 		} catch (err) {
 			console.error("Error fetching pieces:", err);
 		}
@@ -79,12 +86,16 @@ function App() {
 				},
 			});
 			const data = await response.json();
-			if (data.found) {
-				setAAFigur(data.ll_piece);
-				setOrder(data.order);
-				setAktiv(true);
-			} else {
+			if (!data.exist) {
 				alert(`No game is saved for the room number ${roomnr}`)
+			} else {
+				if (data.taken) {
+					alert(`The room ${roomnr} is taken`)
+				} else {
+					setAAFigur(data.ll_piece);
+					setOrder(data.order);
+					setAktiv(true);
+				}
 			}
 		} catch (err) {
 			console.error("Error by reloading state:", err);
@@ -92,10 +103,10 @@ function App() {
 	};
 
 	const reset = async () => {
-		if (timerInterval) clearInterval(timerInterval);
-		setTimerInterval(null);
-		setSeconds(0);
-		setNrMoves(0);
+		// if (timerInterval) clearInterval(timerInterval);
+		// setTimerInterval(null);
+		// setSeconds(0);
+		// setNrMoves(0);
 		setOrder(0);
 
 		initBoard1();
@@ -180,7 +191,19 @@ function App() {
 		// if (!isNaN(score)) {
 		// 	handleNewScore(score);
 		// }
-		alert(roomnr)
+		try {
+			const response = await fetch(`${url0}backend_info/`, {
+				method: "GET",
+				credentials: "include",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+			const data = await response.json();
+			alert(`Room taken: ${data.lst_roomnr}. State saved: ${data.lst_roomnr_db}.`)
+		} catch (err) {
+			console.error("Error by reloading state:", err);
+		}
 	}
 	const klicken1 = async (coords: { x: number; y: number }) => {
 		if (!aktiv) return 
@@ -260,8 +283,8 @@ function App() {
 					<button onClick={saveState} title="Save the game with the room number">Save</button>
 					<button onClick={reloadState} title="Reload the saved game with the room number">Reload</button>
 				</div>
-				<p>Timer: <span id="timer" ref={timerRef}>{formatTime(seconds)}</span></p>
-				<p>Number of moves: <span id="nrMoves">{nrMoves}</span></p>
+				{/* <p>Timer: <span id="timer" ref={timerRef}>{formatTime(seconds)}</span></p>
+				<p>Number of moves: <span id="nrMoves">{nrMoves}</span></p> */}
 				<p>Player in turn: <span className={`circleSmall farbe${order}`}></span></p>
 				<a href="https://github.com/limlleonard/sternhalma" target="_blank">Link to source code</a>
 				<br />

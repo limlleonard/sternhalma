@@ -45,8 +45,13 @@ def starten(request):
     try:
         nr_player = int(request.data.get("nrPlayer", 0))
         roomnr = int(request.data.get("roomnr", 0))
-        dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
-        return Response(dct_game[roomnr].get_ll_piece())
+        if roomnr in dct_game:
+            return Response({"exist": True})
+        else:
+            dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
+            return Response(
+                {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
+            )
     except Exception as e:
         print(e)
         return Response({"error": "Invalid input"}, status=400)
@@ -130,7 +135,9 @@ def reload_state(request):
     raw_states = Game_state.objects.filter(roomnr=roomnr)
     lst_state = list(raw_states.values("order", "roomnr", "state_players"))
     if not raw_states.exists():
-        return Response({"found": False})
+        return Response({"exist": False})
+    if roomnr in dct_game:
+        return Response({"exist": True, "taken": True})
     dct_game[roomnr] = Game(
         roomnr=roomnr,
         state_players=lst_state[0]["state_players"],
@@ -138,13 +145,21 @@ def reload_state(request):
     )
     return Response(
         {
-            "found": True,
+            "exist": True,
+            "taken": False,
             "ll_piece": dct_game[roomnr].get_ll_piece(),
             "order": lst_state[0]["order"],
         }
     )
     # except Game_state.DoesNotExist:
     #     return Response({})
+
+
+@api_view(["GET"])
+def backend_info(request):
+    """Return backend information"""
+    lst_roomnr_db = Game_state.objects.values_list("roomnr", flat=True).distinct()
+    return Response({"lst_roomnr": dct_game.keys(), "lst_roomnr_db": lst_roomnr_db})
 
 
 # class ViewsetScore(viewsets.ModelViewSet):
