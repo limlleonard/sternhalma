@@ -25,7 +25,7 @@ function App() {
     const [bestList, setBestList] = useState<ModelScore[]>([]);
 	const [aktiv, setAktiv] = useState<boolean>(false); // if a game is running
 
-    const initialRoomNr = Math.floor(Math.random() * 10); // Generate random number between 0-9
+    const initialRoomNr = Math.floor(Math.random() * 100); // Generate random number between 0-9
     const [roomnr, setRoomnr] = useState<number>(initialRoomNr);
     const [tempRoomnr, setTempRoomnr] = useState<string>(initialRoomNr.toString());
 
