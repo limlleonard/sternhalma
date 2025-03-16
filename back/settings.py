@@ -10,6 +10,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALLOWED_HOSTS = ["sternhalma.onrender.com", "127.0.0.1"]
 
 INSTALLED_APPS = [
+    "daphne",
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -51,7 +53,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "back.wsgi.application"
-
+ASGI_APPLICATION = "back.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 # if DEBUG:
 # DATABASES = {
 #     "default": {

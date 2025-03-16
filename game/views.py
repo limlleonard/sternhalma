@@ -45,10 +45,19 @@ def starten(request):
     try:
         nr_player = int(request.data.get("nrPlayer", 0))
         roomnr = int(request.data.get("roomnr", 0))
-        if roomnr in dct_game:
-            return Response({"exist": True})
-        else:
+        # if roomnr in dct_game:
+        #     return Response({"exist": True})
+        # else:
+        #     dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
+        #     return Response(
+        #         {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
+        #     )
+        if roomnr not in dct_game:
             dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
+            return Response(
+                {"exist": True, "ll_piece": dct_game[roomnr].get_ll_piece()}
+            )
+        else:
             return Response(
                 {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
             )

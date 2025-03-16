@@ -3,7 +3,10 @@ import './App.css'
 import {Circle, Piece, Valid, Selected} from "./circles"
 const devMode=import.meta.env.MODE==='development'
 const url0=devMode ? 'http://127.0.0.1:8000/' : `${window.location.origin}/`;
-// const url0=
+const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+const url0ws = devMode 
+    ? 'ws://127.0.0.1:8000/' 
+    : `${protocol}${window.location.host}/`;
 
 interface ModelScore {
     id: number;
@@ -29,6 +32,7 @@ function App() {
     const [roomnr, setRoomnr] = useState<number>(initialRoomNr);
     const [tempRoomnr, setTempRoomnr] = useState<string>(initialRoomNr.toString());
 
+	const [wsGame1, setWsGame1] = useState<WebSocket | null>(null);
 	// const formatTime = (seconds: number) => {
 	// 	const minutes = Math.floor(seconds / 60);
 	// 	const remainingSeconds = seconds % 60;
@@ -48,15 +52,16 @@ function App() {
 				body: JSON.stringify({ nrPlayer, roomnr }),
 			});
 			const data = await response.json();
-			if (data.exist) {
-				alert("The room is taken, please choose another room number");
-			} else {
-				const llPiece: [number, number][][] = data.ll_piece;
-				setAAFigur(llPiece);
-				setAktiv(true);
-			}
+			// if (data.exist) {
+			// 	alert("The room is taken, please choose another room number");
+			// } else {
+			const llPiece: [number, number][][] = data.ll_piece;
+			setAAFigur(llPiece);
+			setAktiv(true);
+			// }
+			initSocket();
 		} catch (err) {
-			console.error("Error fetching pieces:", err);
+			console.error("Error starten:", err);
 		}
 	};
 	const saveState = async () => {
@@ -97,11 +102,11 @@ function App() {
 					setAktiv(true);
 				}
 			}
+			initSocket();
 		} catch (err) {
 			console.error("Error by reloading state:", err);
 		}
 	};
-
 	const reset = async () => {
 		// if (timerInterval) clearInterval(timerInterval);
 		// setTimerInterval(null);
@@ -115,8 +120,8 @@ function App() {
 		setArrValid([]);
 		setAktiv(false)
 		// Wenn man auf reset klickt, das Spiel läuft immer noch im Backend, aber der Frontend ist deaktiviert
+		// run a random for roomnr
 	};
-
 	const initBoard1 = async () => {
 		try {
 			const response = await fetch(`${url0}return_board/`);
@@ -135,7 +140,6 @@ function App() {
 			console.error("Error fetching board data:", err);
 		}
 	};
-
     const fetchScores = () => {
         fetch(`${url0}get_score/`)
             .then((response) => response.json())
@@ -152,7 +156,6 @@ function App() {
             })
             .catch((error) => console.error('Error fetching data:', error));
     };
-
     const handleNewScore = (newScore: number) => {
         // Find the highest score in the array
         const scores = bestList
@@ -185,7 +188,6 @@ function App() {
             }
         }
     };
-
 	const test1 = async () => {
 		// const score = parseInt(prompt('Enter a new score:') || '', 10);
 		// if (!isNaN(score)) {
@@ -217,21 +219,8 @@ function App() {
 				},
 				body: JSON.stringify({ xr, yr, roomnr }),
 			});
-			const result = await response.json();
-			setSelected(null);
-			if (result.selected) {
-				setSelected([coords.x, coords.y]);
-			}
-			setArrValid(result.validPos);
-			if (result.neueFiguren) {
-				setAAFigur(result.neueFiguren)
-				setNrMoves((prev) => prev+1);
-				setOrder(result.order)
-				if (result.gewonnen) {
-					handleNewScore(nrMoves)
-					setAktiv(false)
-				};
-			}
+			const data = await response.json();
+			if (wsGame1) wsGame1.send(JSON.stringify(data));
 		} catch (err) {
 			console.error("Error during klicken:", err);
 		}
@@ -242,13 +231,44 @@ function App() {
 	useEffect(() => {
 		initBoard1();
 		fetchScores();
+
+		if (wsGame1) {
+			wsGame1.onmessage = (event) => {
+				const data = JSON.parse(event.data);
+				console.log(data);
+			};
+		}
 	}, []);
 
-	// useEffect(() => {
-		// if (timerRef.current) {
-		// 	timerRef.current.textContent = formatTime(seconds);
-		// }
-	// }, [seconds]);
+	const initSocket = () => {
+		if (wsGame1) {
+			wsGame1.close();
+		}
+		const newWs = new WebSocket(`${url0ws}ws/game1/?roomnr=${roomnr}`);
+		newWs.onopen = () => console.log(`Connected to room ${roomnr}`);
+		newWs.onmessage = (event) => {
+			const data = JSON.parse(event.data); // Convert JSON string to an object
+			setSelected(null);
+			if (data.selected) {
+				setSelected([data.selected[0], data.selected[1]]);
+			}
+			setArrValid(data.validPos);
+			if (data.neueFiguren) {
+				setAAFigur(data.neueFiguren)
+				setNrMoves((prev) => prev+1);
+				setOrder(data.order)
+				if (data.gewonnen) {
+					handleNewScore(nrMoves)
+					setAktiv(false)
+				};
+			}
+		};
+		newWs.onclose = () => console.log(`WebSocket closed for room ${roomnr}`);
+		setWsGame1(newWs);
+		return () => {
+			newWs.close();
+		};
+	}
 
 	return (
 		<>
@@ -289,6 +309,7 @@ function App() {
 				<a href="https://github.com/limlleonard/sternhalma" target="_blank">Link to source code</a>
 				<br />
 				<button onClick={test1}>Test1</button>
+
 			</section>
 			<div className="board" id="board" >
 				{arrCircle.map(([x, y]) => (
