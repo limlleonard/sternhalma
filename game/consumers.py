@@ -2,16 +2,20 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from urllib.parse import parse_qs
 
+from .views import dct_game
+
 
 class Game1(AsyncWebsocketConsumer):
     async def connect(self):
         query_params = parse_qs(self.scope["query_string"].decode())
         self.roomnr = query_params.get("roomnr", [None])[0]
-        print(f"connect, add roomnr {self.roomnr}")
+        print(f"connect, {self.roomnr}")
         await self.channel_layer.group_add(self.roomnr, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
+        print(f"disconnect, {self.roomnr}")
+        del dct_game[int(self.roomnr)]
         await self.channel_layer.group_discard(self.roomnr, self.channel_name)
 
     async def receive(self, text_data):

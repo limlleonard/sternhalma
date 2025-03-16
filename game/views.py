@@ -1,6 +1,7 @@
 import json
-import pickle
-import base64
+
+# import pickle
+# import base64
 from django.shortcuts import render
 
 # from rest_framework import viewsets, status # class view
@@ -27,53 +28,41 @@ def home(request):
 
 
 def return_board(request):
-    # request.session["test_home"] = "test_home"
-    # if "game" in request.session.keys():
-    #     game1 = pickle.loads(
-    #         base64.b64decode(request.session.get("game").encode("utf-8"))
-    #     )
-    # else:
-    #     game1 = Game()
-    #     request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
     return JsonResponse(board1.lst_board_int, safe=False)
 
 
-# @csrf_exempt
 @api_view(["POST"])
 def starten(request):
     """this should start game. Front should send nr_player here and reset game"""
     try:
         nr_player = int(request.data.get("nrPlayer", 0))
         roomnr = int(request.data.get("roomnr", 0))
-        # if roomnr in dct_game:
-        #     return Response({"exist": True})
-        # else:
-        #     dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
-        #     return Response(
-        #         {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
-        #     )
         if roomnr not in dct_game:
             dct_game[roomnr] = Game(nr_player=nr_player, roomnr=roomnr)
             return Response(
-                {"exist": True, "ll_piece": dct_game[roomnr].get_ll_piece()}
+                {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
             )
         else:
             return Response(
-                {"exist": False, "ll_piece": dct_game[roomnr].get_ll_piece()}
+                {"exist": True, "ll_piece": dct_game[roomnr].get_ll_piece()}
             )
     except Exception as e:
         print(e)
         return Response({"error": "Invalid input"}, status=400)
-    # try:
-    #     nr_player = int(request.data.get("nrPlayer", 0))  # DRF auto-parses JSON
-    #     game1 = pickle.loads(
-    #         base64.b64decode(request.session.get("game").encode("utf-8"))
-    #     )
-    #     game1.reset(nr_player)
-    #     request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")
-    #     return Response(game1.get_ll_piece())  # DRF auto-handles JSON response
-    # except (TypeError, ValueError):
-    #     return Response({"error": "Invalid input"}, status=400)
+
+
+@api_view(["POST"])
+def reset(request):
+    """Remove the instance from dct_game and the saved game in db"""
+    try:
+        roomnr = int(request.data.get("roomnr", 0))
+        del dct_game[int(roomnr)]
+        # game_state = Game_state.objects.get(roomnr=roomnr)
+        # game_state.delete()
+        return Response({"ok": True})
+    except Exception as e:
+        print(e)
+        return Response({"ok": False}, status=400)
 
 
 # @csrf_exempt  # This disables 'Cross-site request forgery' for this view
@@ -193,3 +182,13 @@ def backend_info(request):
 #             scores.last().delete()
 
 #         return Response({'success': 'Score added'}, status=status.HTTP_201_CREATED)
+
+# pickle example
+# request.session["test_home"] = "test_home"
+# if "game" in request.session.keys():
+#     game1 = pickle.loads(
+#         base64.b64decode(request.session.get("game").encode("utf-8"))
+#     )
+# else:
+#     game1 = Game()
+#     request.session["game"] = base64.b64encode(pickle.dumps(game1)).decode("utf-8")

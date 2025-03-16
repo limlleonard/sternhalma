@@ -30,7 +30,7 @@ function App() {
 
     const initialRoomNr = Math.floor(Math.random() * 100); // Generate random number between 0-9
     const [roomnr, setRoomnr] = useState<number>(initialRoomNr);
-    const [tempRoomnr, setTempRoomnr] = useState<string>(initialRoomNr.toString());
+    const [roomnrShow, setRoomnrShow] = useState<string>(initialRoomNr.toString());
 
 	const [wsGame1, setWsGame1] = useState<WebSocket | null>(null);
 	// const formatTime = (seconds: number) => {
@@ -118,9 +118,22 @@ function App() {
 		setSelected(null);
 		setAAFigur([]);
 		setArrValid([]);
-		setAktiv(false)
-		// Wenn man auf reset klickt, das Spiel läuft immer noch im Backend, aber der Frontend ist deaktiviert
-		// run a random for roomnr
+		setAktiv(false);
+		try {
+			const response = await fetch(`${url0}reset/`, {
+				method: "POST",
+				headers: {"Content-Type": "application/json",},
+				body: JSON.stringify({ roomnr }),
+			});
+			const data = await response.json();
+			if (!data.ok) console.log("Error by reset");
+		} catch (err) {
+			console.error("Error reset:", err);
+		}
+		const tempRoomnr:number=Math.floor(Math.random() * 100);
+		setRoomnrShow(tempRoomnr.toString());
+		setRoomnr(tempRoomnr);
+		// run a random for roomnr, delete the old instance in dct_game in backend
 	};
 	const initBoard1 = async () => {
 		try {
@@ -137,7 +150,7 @@ function App() {
 				([x, y]:[number, number]) => [Math.round(x), Math.round(y)]);
 			setArrCircle(lstBoardRound);
 		} catch (err) {
-			console.error("Error fetching board data:", err);
+			console.error("Error init board:", err);
 		}
 	};
     const fetchScores = () => {
@@ -289,8 +302,8 @@ function App() {
 						type="text"
 						id="roomnr"
 						name="roomnr"
-						value={tempRoomnr}
-						onChange={(e) => setTempRoomnr(e.target.value)}
+						value={roomnrShow}
+						onChange={(e) => setRoomnrShow(e.target.value)}
 						onBlur={(e) => setRoomnr(Number(e.target.value) || 0)}
 					/>
 					{/* <input type="text" id="roomnr" name="roomnr" value={roomnr}

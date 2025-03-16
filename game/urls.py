@@ -10,6 +10,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("return_board/", views.return_board, name="return_board"),
     path("starten/", views.starten, name="starten"),
+    path("reset/", views.reset, name="reset"),
     path("klicken/", views.klicken, name="klicken"),
     # path("return_score/", views.return_score, name="return_score"),
     # path('api/', include(router.urls)),
