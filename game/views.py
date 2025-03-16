@@ -5,7 +5,7 @@ import json
 from django.shortcuts import render
 
 # from rest_framework import viewsets, status # class view
-from rest_framework.renderers import JSONRenderer  # class view
+# from rest_framework.renderers import JSONRenderer  # class view
 from rest_framework.response import Response  # update database
 from rest_framework.decorators import (
     api_view,
@@ -92,7 +92,7 @@ def klicken(request):
 
 
 @api_view(["GET"])
-@renderer_classes([JSONRenderer])  # Ensure response is JSON
+# @renderer_classes([JSONRenderer])  # Ensure response is JSON
 def get_scores(request):
     scores = Score.objects.all().order_by("score")[:5]
     serializer = SerializerScore(scores, many=True)  # serializing multiple object
@@ -100,7 +100,7 @@ def get_scores(request):
 
 
 @api_view(["POST"])
-@renderer_classes([JSONRenderer])
+# @renderer_classes([JSONRenderer])
 def add_score(request):
     score = request.data.get("score")
     name = request.data.get("name")

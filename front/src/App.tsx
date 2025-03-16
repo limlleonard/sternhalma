@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"; // useRef
 import './App.css'
-import {Circle, Piece, Valid, Selected} from "./circles"
+import Board from './Board';
+
 const devMode=import.meta.env.MODE==='development'
 const url0=devMode ? 'http://127.0.0.1:8000/' : `${window.location.origin}/`;
 const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -220,7 +221,7 @@ function App() {
 			console.error("Error by reloading state:", err);
 		}
 	}
-	const klicken1 = async (coords: { x: number; y: number }) => {
+	const handleBoardClick = async (coords: { x: number; y: number }) => {
 		if (!aktiv) return 
 		const xr=coords.x;
 		const yr=coords.y;
@@ -306,9 +307,6 @@ function App() {
 						onChange={(e) => setRoomnrShow(e.target.value)}
 						onBlur={(e) => setRoomnr(Number(e.target.value) || 0)}
 					/>
-					{/* <input type="text" id="roomnr" name="roomnr" value={roomnr}
-						onChange={(e) => setRoomnr(e.target.value)}
-						onBlur={(e) => setRoomnr(Number(e.target.value) || 0)}></input> */}
 				</div>
 				<div id="ctn-btn">
 					<button onClick={starten} title="Start a new game">Start</button>
@@ -324,20 +322,14 @@ function App() {
 				<button onClick={test1}>Test1</button>
 
 			</section>
-			<div className="board" id="board" >
-				{arrCircle.map(([x, y]) => (
-					<Circle key={`${x}-${y}`} x={x} y={y} onKlicken={klicken1}/>
-				))}
-				{aaFigur.map((arrFigur, nrSpieler) => (
-					arrFigur.map(([x, y]) => (
-						<Piece key={`${x}-${y}`} x={x} y={y} colorInd={nrSpieler} onKlicken={klicken1} />
-					))
-				))}
-				{arrValid.map(([x, y]) => (
-					<Valid key={`${x}-${y}`} x={x} y={y} onKlicken={klicken1} />
-				))}
-				{selected ? (<Selected x={selected[0]} y={selected[1]} colorInd={order} onKlicken={klicken1} /> ) : null}
-			</div>
+			<Board
+				arrCircle={arrCircle}
+				aaFigur={aaFigur}
+				arrValid={arrValid}
+				selected={selected}
+				order={order}
+				onBoardClick={handleBoardClick}
+			/>
 		</div>
 		</>
 	)
